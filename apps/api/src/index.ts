@@ -1,18 +1,25 @@
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
-import { env } from './config/env.js';
-import { errorHandler, notFound } from './middleware/errorHandler.js';
+import { env } from './config/env';
+import { errorHandler, notFound } from './middleware/errorHandler';
+import { createWorker } from './worker';
 
 // Routes
-import authRoutes from './routes/auth.routes.js';
-import buildingsRoutes from './routes/buildings.routes.js';
-import panelsRoutes from './routes/panels.routes.js';
-import alertsRoutes from './routes/alerts.routes.js';
-import readingsRoutes from './routes/readings.routes.js';
-import analyticsRoutes from './routes/analytics.routes.js';
+import authRoutes from './routes/auth.routes';
+import buildingsRoutes from './routes/buildings.routes';
+import panelsRoutes from './routes/panels.routes';
+import alertsRoutes from './routes/alerts.routes';
+import readingsRoutes from './routes/readings.routes';
+import analyticsRoutes from './routes/analytics.routes';
 
 const app = express();
+const httpServer = createServer(app);
+
+// Initialize the MQTT Worker
+const worker = createWorker();
+worker.initializeSocket(httpServer);
 
 // Security middleware
 app.use(helmet());
@@ -27,9 +34,14 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check
+// Health check with worker status
 app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    const workerStatus = worker.getStatus();
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        worker: workerStatus,
+    });
 });
 
 // API Routes
@@ -47,16 +59,44 @@ app.use(errorHandler);
 // Start server
 const PORT = env.PORT;
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, async () => {
     console.log(`
 🚀 Dashboard Energy API Server
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📡 Server running on: http://localhost:${PORT}
 🔧 Environment: ${env.NODE_ENV}
 📚 API Base URL: http://localhost:${PORT}/api
+🔌 Socket.io: ws://localhost:${PORT}
 ❤️  Health Check: http://localhost:${PORT}/health
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
+
+    // Start MQTT Worker (will connect to broker if available)
+    try {
+        await worker.start();
+    } catch (error) {
+        console.log('⚠️ MQTT broker not available - worker running in standalone mode');
+        console.log('   To enable real-time features, start a MQTT broker on localhost:1883');
+    }
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully...');
+    worker.stop();
+    httpServer.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully...');
+    worker.stop();
+    httpServer.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
 });
 
 export default app;
