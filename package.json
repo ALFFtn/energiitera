@@ -1,0 +1,11 @@
+{
+  "name": "grid-monitor-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/grid-monitor",
+    "build": "npm run build --workspaces"
+  }
+}
