@@ -85,16 +85,15 @@ export class MqttService extends EventEmitter {
     private subscribeToTopics(): void {
         if (!this.client) return;
 
-        // Subscribe to all panel metrics: energy/panels/+/metrics
-        const metricsTopic = `${this.config.topicPrefix}/+/metrics`;
-        // Subscribe to all panel events: energy/panels/+/events
-        const eventsTopic = `${this.config.topicPrefix}/+/events`;
+        // Subscribe to all building sensor data: energy/buildings/+/+/+/# 
+        // Pattern: energy/buildings/{zoneCode}/{buildingCode}/{sensorId}/{parameter}
+        const allDataTopic = `${this.config.topicPrefix}/#`;
 
-        this.client.subscribe([metricsTopic, eventsTopic], { qos: 1 }, (err) => {
+        this.client.subscribe([allDataTopic], { qos: 1 }, (err) => {
             if (err) {
                 console.error('❌ MQTT subscribe error:', err);
             } else {
-                console.log(`📡 Subscribed to: ${metricsTopic}, ${eventsTopic}`);
+                console.log(`📡 Subscribed to: ${allDataTopic}`);
             }
         });
     }
@@ -108,22 +107,64 @@ export class MqttService extends EventEmitter {
                 timestamp: new Date(),
             };
 
-            // Extract panel ID from topic: energy/panels/{panelCode}/metrics
+            // Parse topic: energy/buildings/{zoneCode}/{buildingCode}/{sensorId}/{parameter}
             const topicParts = topic.split('/');
-            const panelCode = topicParts[2]; // e.g., "1A", "4B"
-            const messageType = topicParts[3]; // "metrics" or "events"
 
-            this.emit('message', {
-                ...mqttMessage,
-                panelCode,
-                messageType,
-            });
+            // Determine if it's the old panel format or new building format
+            if (topicParts[1] === 'buildings' && topicParts.length >= 6) {
+                // New format: energy/buildings/{zoneCode}/{buildingCode}/{sensorId}/{parameter}
+                const zoneCode = topicParts[2];
+                const buildingCode = topicParts[3];
+                const sensorId = topicParts[4];
+                const parameter = topicParts[5];
 
-            // Emit specific events based on message type
-            if (messageType === 'metrics') {
-                this.emit('metrics', { panelCode, data: payload, timestamp: new Date() });
-            } else if (messageType === 'events') {
-                this.emit('event', { panelCode, data: payload, timestamp: new Date() });
+                console.log(`📥 ${zoneCode}/${buildingCode}/${sensorId}/${parameter}:`, payload.value || payload);
+
+                this.emit('message', {
+                    ...mqttMessage,
+                    zoneCode,
+                    buildingCode,
+                    sensorId,
+                    parameter,
+                });
+
+                // Emit specific events based on parameter
+                if (parameter === 'metrics') {
+                    this.emit('metrics', {
+                        panelCode: `${buildingCode}-${sensorId}`,
+                        buildingCode,
+                        sensorId,
+                        data: payload,
+                        timestamp: new Date()
+                    });
+                } else {
+                    // Individual parameter update
+                    this.emit('parameter', {
+                        zoneCode,
+                        buildingCode,
+                        sensorId,
+                        parameter,
+                        value: payload.value,
+                        unit: payload.unit,
+                        timestamp: new Date(),
+                    });
+                }
+            } else if (topicParts.length >= 4) {
+                // Old format: energy/panels/{panelCode}/{type}
+                const panelCode = topicParts[2];
+                const messageType = topicParts[3];
+
+                this.emit('message', {
+                    ...mqttMessage,
+                    panelCode,
+                    messageType,
+                });
+
+                if (messageType === 'metrics') {
+                    this.emit('metrics', { panelCode, data: payload, timestamp: new Date() });
+                } else if (messageType === 'events') {
+                    this.emit('event', { panelCode, data: payload, timestamp: new Date() });
+                }
             }
         } catch (error) {
             console.error('❌ Error parsing MQTT message:', error);

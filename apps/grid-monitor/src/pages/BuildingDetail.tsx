@@ -8,6 +8,7 @@ import { PhaseLoadBalance } from '../components/panel/PhaseLoadBalance';
 import { SignalQuality } from '../components/panel/SignalQuality';
 import { EventLog } from '../components/panel/EventLog';
 import { ConfigureSensorModal } from '../components/building/ConfigureSensorModal';
+import { useBuildingSensor } from '../hooks/useSocket';
 
 interface Building {
     id: string;
@@ -34,16 +35,29 @@ export function BuildingDetail() {
     const [error, setError] = useState('');
     const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
-    // Mock LVMDP data - will be replaced with real sensor data via WebSocket
-    const lvmdpData = {
-        voltage: { r: 231, s: 229, t: 230 },
-        current: { r: 124, s: 118, t: 121 },
-        power: 85.2,
-        powerFactor: 0.96,
-        frequency: 50.02,
-        temperature: 42,
-        signalStrength: 98,
-        lastUpdate: '2s ago',
+    // Real-time LVMDP sensor data via Socket.io
+    const {
+        voltage,
+        current,
+        power,
+        powerFactor,
+        frequency,
+        temperature,
+        thdVoltage,
+        thdCurrent,
+        lastUpdate,
+        isConnected
+    } = useBuildingSensor({
+        buildingCode: building?.code || '',
+        zoneCode: building?.zone?.code || '',
+    });
+
+    // Format last update time
+    const formatLastUpdate = () => {
+        if (!lastUpdate) return 'No data';
+        const seconds = Math.floor((Date.now() - new Date(lastUpdate).getTime()) / 1000);
+        if (seconds < 60) return `${seconds}s ago`;
+        return `${Math.floor(seconds / 60)}m ago`;
     };
 
     useEffect(() => {
@@ -143,9 +157,9 @@ export function BuildingDetail() {
                 </div>
                 <div className="flex items-center gap-4">
                     {/* Live indicator */}
-                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span className="text-xs font-medium text-slate-300">Live • {lvmdpData.lastUpdate}</span>
+                    <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border ${isConnected ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-500/10 border-slate-500/20'}`}>
+                        <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                        <span className="text-xs font-medium text-slate-300">{isConnected ? 'Live' : 'Connecting'} • {formatLastUpdate()}</span>
                     </div>
                     {/* Status badge */}
                     <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border ${statusBgColors[building.status]}`}>
@@ -175,14 +189,6 @@ export function BuildingDetail() {
                             <span className="material-symbols-outlined text-slate-500 text-[18px]">electrical_services</span>
                             <span className="text-sm capitalize">{building.gridConnection} Grid</span>
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-white/5 rounded-lg">
-                            <span className="material-symbols-outlined text-slate-500 text-[18px]">thermostat</span>
-                            <span className="text-sm">{lvmdpData.temperature}°C</span>
-                        </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-white/5 rounded-lg">
-                            <span className="material-symbols-outlined text-slate-500 text-[18px]">frequency</span>
-                            <span className="text-sm">{lvmdpData.frequency} Hz</span>
-                        </div>
                     </div>
                     <p className="text-slate-500 dark:text-slate-400">{building.description || 'No description available'}</p>
                 </div>
@@ -194,46 +200,56 @@ export function BuildingDetail() {
                             <span className="material-symbols-outlined text-yellow-500 text-[20px]">electric_bolt</span>
                             <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Active Power</span>
                         </div>
-                        <p className="text-3xl font-bold">{lvmdpData.power}</p>
+                        <p className="text-3xl font-bold tabular-nums">{power.toFixed(1)}</p>
                         <p className="text-xs text-slate-400 mt-1">kW</p>
                     </div>
                     <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="material-symbols-outlined text-primary text-[20px]">speed</span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Power Factor</span>
+                            <span className="material-symbols-outlined text-purple-500 text-[20px]">dynamic_form</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Reactive Power</span>
                         </div>
-                        <p className={`text-3xl font-bold ${lvmdpData.powerFactor < 0.9 ? 'text-orange-500' : ''}`}>
-                            {lvmdpData.powerFactor.toFixed(2)}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-1">{lvmdpData.powerFactor >= 0.95 ? 'Excellent' : lvmdpData.powerFactor >= 0.9 ? 'Good' : 'Needs Attention'}</p>
+                        <p className="text-3xl font-bold tabular-nums">{(power * Math.tan(Math.acos(powerFactor || 0.95))).toFixed(1)}</p>
+                        <p className="text-xs text-slate-400 mt-1">kVAR</p>
                     </div>
                     <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="material-symbols-outlined text-blue-500 text-[20px]">bolt</span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Avg Voltage</span>
+                            <span className="material-symbols-outlined text-orange-500 text-[20px]">thermostat</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Temperature</span>
                         </div>
-                        <p className="text-3xl font-bold">
-                            {Math.round((lvmdpData.voltage.r + lvmdpData.voltage.s + lvmdpData.voltage.t) / 3)}
+                        <p className={`text-3xl font-bold tabular-nums ${temperature > 50 ? 'text-red-500' : temperature > 40 ? 'text-orange-500' : ''}`}>
+                            {temperature.toFixed(1)}
                         </p>
-                        <p className="text-xs text-slate-400 mt-1">V (L-N)</p>
+                        <p className="text-xs text-slate-400 mt-1">°C</p>
                     </div>
                     <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
                         <div className="flex items-center gap-2 mb-2">
                             <span className="material-symbols-outlined text-green-500 text-[20px]">signal_cellular_alt</span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Signal</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Connection</span>
                         </div>
-                        <p className="text-3xl font-bold">{lvmdpData.signalStrength}%</p>
-                        <p className="text-xs text-green-500 mt-1">Strong</p>
+                        <p className="text-3xl font-bold">{isConnected ? 'Online' : 'Offline'}</p>
+                        <p className={`text-xs ${isConnected ? 'text-green-500' : 'text-slate-400'} mt-1`}>{isConnected ? 'Receiving data' : 'Waiting...'}</p>
                     </div>
                 </div>
 
                 {/* Dashboard Grid - Panel Gauges */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-                    <VoltageGauge />
-                    <CurrentGauge />
-                    <PowerFactorGauge />
+                    <VoltageGauge
+                        phaseR={voltage.r}
+                        phaseS={voltage.s}
+                        phaseT={voltage.t}
+                    />
+                    <CurrentGauge
+                        phaseR={current.r}
+                        phaseS={current.s}
+                        phaseT={current.t}
+                    />
+                    <PowerFactorGauge value={powerFactor} />
                     <PhaseLoadBalance />
-                    <SignalQuality />
+                    <SignalQuality
+                        frequency={frequency}
+                        thdVoltage={thdVoltage}
+                        thdCurrent={thdCurrent}
+                    />
                     <EventLog />
                 </div>
 

@@ -1,0 +1,13 @@
+{
+    "name": "mqtt-test-publisher",
+    "version": "1.0.0",
+    "description": "MQTT test publisher for LVMDP sensor simulation",
+    "main": "publisher.js",
+    "scripts": {
+        "start": "node publisher.js",
+        "dev": "node --watch publisher.js"
+    },
+    "dependencies": {
+        "mqtt": "^5.3.0"
+    }
+}

@@ -96,6 +96,13 @@ export class Worker {
             // Handle panel events (e.g., status changes, maintenance mode)
         });
 
+        // Handle individual parameter updates from buildings
+        this.mqttService.on('parameter', ({ zoneCode, buildingCode, sensorId, parameter, value, unit }) => {
+            this.metricsCount++;
+            // Broadcast to Socket.io clients
+            socketService.broadcastBuildingSensor(zoneCode, buildingCode, sensorId, parameter, value, unit);
+        });
+
         this.mqttService.on('error', (error) => {
             console.error('❌ MQTT Worker error:', error);
         });

@@ -59,6 +59,17 @@ export class SocketService {
                 console.log(`👁️ Client ${socket.id} unsubscribed from ${room}`);
             });
 
+            // Building sensor subscriptions
+            socket.on('subscribe', ({ channel }: { channel: string }) => {
+                socket.join(channel);
+                console.log(`👁️ Client ${socket.id} subscribed to ${channel}`);
+            });
+
+            socket.on('unsubscribe', ({ channel }: { channel: string }) => {
+                socket.leave(channel);
+                console.log(`👁️ Client ${socket.id} unsubscribed from ${channel}`);
+            });
+
             socket.on('subscribe:alerts', () => {
                 socket.join('alerts');
                 console.log(`🔔 Client ${socket.id} subscribed to alerts`);
@@ -76,6 +87,36 @@ export class SocketService {
         });
 
         console.log('🔌 Socket.io initialized');
+    }
+
+    /**
+     * Broadcast building sensor parameter update
+     */
+    broadcastBuildingSensor(zoneCode: string, buildingCode: string, sensorId: string, parameter: string, value: number, unit: string): void {
+        if (!this.io) {
+            console.warn('⚠️ Socket.io not initialized, cannot broadcast');
+            return;
+        }
+
+        const channel = `building:${zoneCode}:${buildingCode}`;
+        const payload = {
+            zoneCode,
+            buildingCode,
+            sensorId,
+            parameter,
+            value,
+            unit,
+            timestamp: new Date(),
+        };
+
+        // Log broadcast (only for power to reduce noise)
+        if (parameter === 'power') {
+            console.log(`📡 Broadcasting to ${this.getConnectedClientsCount()} clients:`, `${parameter}=${value}`);
+        }
+
+        this.io.to(channel).emit('sensor:parameter', payload);
+        // Also broadcast to all connected clients
+        this.io.emit('sensor:parameter', payload);
     }
 
     /**
