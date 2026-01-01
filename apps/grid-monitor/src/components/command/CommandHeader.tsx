@@ -18,7 +18,7 @@ export function CommandHeader() {
                 <nav className="hidden md:flex items-center gap-1 ml-8">
                     <Link className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white bg-primary rounded-md" to="/">Dashboard</Link>
                     <Link className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors" to="/analytics">Analytics</Link>
-                    <Link className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors" to="/monitoring">Devices</Link>
+                    <Link className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors" to="/monitoring">Buildings</Link>
                     <a className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors" href="#">Maintenance</a>
                 </nav>
             </div>

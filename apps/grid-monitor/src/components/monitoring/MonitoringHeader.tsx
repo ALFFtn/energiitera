@@ -13,7 +13,7 @@ export function MonitoringHeader() {
                 </div>
                 <div className="hidden md:flex items-center gap-8">
                     <Link className="text-slate-500 dark:text-[#9ca6ba] hover:text-primary dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="/">Dashboard</Link>
-                    <Link className="text-primary dark:text-white text-sm font-medium leading-normal" to="/monitoring">Monitoring</Link>
+                    <Link className="text-primary dark:text-white text-sm font-medium leading-normal" to="/monitoring">Buildings</Link>
                     <Link className="text-slate-500 dark:text-[#9ca6ba] hover:text-primary dark:hover:text-white text-sm font-medium leading-normal transition-colors" to="/analytics">Analytics</Link>
                     <a className="text-slate-500 dark:text-[#9ca6ba] hover:text-primary dark:hover:text-white text-sm font-medium leading-normal transition-colors" href="#">Settings</a>
                 </div>

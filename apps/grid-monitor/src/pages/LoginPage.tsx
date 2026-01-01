@@ -1,13 +1,46 @@
-
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export function LoginPage() {
     const navigate = useNavigate();
+    const [email, setEmail] = useState('admin@gridmonitor.iot');
+    const [password, setPassword] = useState('password');
+    const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app, logic here
-        navigate('/');
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const response = await fetch('http://localhost:3001/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Login failed');
+            }
+
+            // Store tokens in localStorage
+            localStorage.setItem('accessToken', data.data.accessToken);
+            localStorage.setItem('refreshToken', data.data.refreshToken);
+            localStorage.setItem('user', JSON.stringify(data.data.user));
+
+            console.log('Login successful:', data.data.user);
+            navigate('/');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Login failed');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -87,6 +120,14 @@ export function LoginPage() {
                             <p className="text-[#9ca6ba] text-base font-normal leading-normal">Please sign in to access the control panel.</p>
                         </div>
 
+                        {/* Error Message */}
+                        {error && (
+                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[18px]">error</span>
+                                {error}
+                            </div>
+                        )}
+
                         {/* Login Form */}
                         <form className="flex flex-col gap-5" onSubmit={handleLogin}>
                             {/* Email Input */}
@@ -97,7 +138,9 @@ export function LoginPage() {
                                         className="flex w-full min-w-0 flex-1 resize-none bg-transparent text-white focus:outline-0 focus:ring-0 border-none h-12 placeholder:text-[#586275] px-4 text-base font-normal leading-normal"
                                         placeholder="Enter your email"
                                         type="email"
-                                        defaultValue="admin@gridmonitor.iot"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
                                     />
                                     <div className="text-[#9ca6ba] flex items-center justify-center pr-4 group-focus-within:text-primary transition-colors duration-200">
                                         <span className="material-symbols-outlined text-[20px]">mail</span>
@@ -115,24 +158,49 @@ export function LoginPage() {
                                     <input
                                         className="flex w-full min-w-0 flex-1 resize-none bg-transparent text-white focus:outline-0 focus:ring-0 border-none h-12 placeholder:text-[#586275] px-4 text-base font-normal leading-normal"
                                         placeholder="Enter your password"
-                                        type="password"
-                                        defaultValue="password"
+                                        type={showPassword ? "text" : "password"}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
                                     />
-                                    <div className="text-[#9ca6ba] flex items-center justify-center pr-4 cursor-pointer hover:text-white transition-colors duration-200">
-                                        <span className="material-symbols-outlined text-[20px]">visibility</span>
-                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="text-[#9ca6ba] flex items-center justify-center pr-4 cursor-pointer hover:text-white transition-colors duration-200"
+                                    >
+                                        <span className="material-symbols-outlined text-[20px]">
+                                            {showPassword ? 'visibility_off' : 'visibility'}
+                                        </span>
+                                    </button>
                                 </div>
                             </div>
 
                             {/* Submit Button */}
                             <button
-                                className="mt-2 flex w-full items-center justify-center rounded-lg bg-primary py-3.5 px-4 text-sm font-bold text-white shadow-[0_0_20px_rgba(13,89,242,0.3)] hover:shadow-[0_0_30px_rgba(13,89,242,0.5)] hover:bg-blue-600 transition-all active:scale-[0.99] gap-2"
+                                className="mt-2 flex w-full items-center justify-center rounded-lg bg-primary py-3.5 px-4 text-sm font-bold text-white shadow-[0_0_20px_rgba(13,89,242,0.3)] hover:shadow-[0_0_30px_rgba(13,89,242,0.5)] hover:bg-blue-600 transition-all active:scale-[0.99] gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 type="submit"
+                                disabled={isLoading}
                             >
-                                <span>Sign In</span>
-                                <span className="material-symbols-outlined text-[18px]">login</span>
+                                {isLoading ? (
+                                    <>
+                                        <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                        <span>Signing In...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Sign In</span>
+                                        <span className="material-symbols-outlined text-[18px]">login</span>
+                                    </>
+                                )}
                             </button>
                         </form>
+
+                        {/* Test Credentials Hint */}
+                        <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                            <p className="text-xs text-primary font-medium mb-1">Test Credentials</p>
+                            <p className="text-xs text-[#9ca6ba]">Email: admin@gridmonitor.iot</p>
+                            <p className="text-xs text-[#9ca6ba]">Password: password</p>
+                        </div>
 
                         {/* Footer / Disclaimer */}
                         <div className="mt-auto pt-6 border-t border-[#3b4354]/30">

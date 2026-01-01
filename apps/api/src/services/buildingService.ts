@@ -113,6 +113,57 @@ export class BuildingService {
         return updated;
     }
 
+    // Create new building with auto-generated MQTT topic
+    async createBuilding(data: {
+        zoneId: string;
+        name: string;
+        code: string;
+        description?: string;
+        gridConnection?: string;
+        mapCoordinates?: object;
+    }) {
+        // Verify zone exists and get zone code
+        const zone = await db.query.zones.findFirst({
+            where: eq(zones.id, data.zoneId),
+            with: {
+                campus: true,
+            },
+        });
+
+        if (!zone) {
+            throw new AppError('Zone not found', 404);
+        }
+
+        // Create building
+        const [newBuilding] = await db.insert(buildings).values({
+            zoneId: data.zoneId,
+            name: data.name,
+            code: data.code,
+            description: data.description,
+            gridConnection: data.gridConnection || 'primary',
+            mapCoordinates: data.mapCoordinates,
+        }).returning();
+
+        return {
+            ...newBuilding,
+            zone,
+        };
+    }
+
+    // Delete building
+    async deleteBuilding(id: string) {
+        const [deleted] = await db
+            .delete(buildings)
+            .where(eq(buildings.id, id))
+            .returning();
+
+        if (!deleted) {
+            throw new AppError('Building not found', 404);
+        }
+
+        return deleted;
+    }
+
     // Get buildings with their status for map display
     async getBuildingsMapData(zoneId?: string) {
         const query = zoneId

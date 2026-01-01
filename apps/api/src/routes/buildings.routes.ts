@@ -79,6 +79,47 @@ router.put('/buildings/:id', authenticate, async (req, res, next) => {
     }
 });
 
+// Create new building with auto-generated MQTT topic
+router.post('/buildings', authenticate, async (req, res, next) => {
+    try {
+        const { zoneId, name, code, description, gridConnection, mapCoordinates } = req.body;
+
+        console.log('📝 Creating building:', { zoneId, name, code });
+
+        if (!zoneId || !name || !code) {
+            return res.status(400).json({
+                success: false,
+                error: 'zoneId, name, and code are required',
+            });
+        }
+
+        const building = await buildingService.createBuilding({
+            zoneId,
+            name,
+            code,
+            description,
+            gridConnection,
+            mapCoordinates,
+        });
+
+        console.log('✅ Building created:', building.id);
+        res.status(201).json({ success: true, data: building });
+    } catch (error) {
+        console.error('❌ Error creating building:', error);
+        next(error);
+    }
+});
+
+// Delete building
+router.delete('/buildings/:id', authenticate, async (req, res, next) => {
+    try {
+        const building = await buildingService.deleteBuilding(req.params.id);
+        res.json({ success: true, data: building, message: 'Building deleted successfully' });
+    } catch (error) {
+        next(error);
+    }
+});
+
 router.get('/buildings/map-data', authenticate, async (req, res, next) => {
     try {
         const zoneId = req.query.zoneId as string | undefined;
