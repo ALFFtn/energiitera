@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ProfileMenu } from '../components/common/ProfileMenu';
 import { VoltageGauge } from '../components/panel/VoltageGauge';
@@ -6,85 +7,79 @@ import { PowerFactorGauge } from '../components/panel/PowerFactorGauge';
 import { PhaseLoadBalance } from '../components/panel/PhaseLoadBalance';
 import { SignalQuality } from '../components/panel/SignalQuality';
 import { EventLog } from '../components/panel/EventLog';
+import { ConfigureSensorModal } from '../components/building/ConfigureSensorModal';
 
-// Mock building data - will be replaced with API
-const buildingsData: Record<string, {
+interface Building {
+    id: string;
     name: string;
     code: string;
-    description: string;
-    zone: string;
+    description: string | null;
     status: 'operational' | 'warning' | 'critical' | 'offline';
-    mqttTopic: string;
-    lvmdp: {
-        voltage: { r: number; s: number; t: number };
-        current: { r: number; s: number; t: number };
-        power: number;
-        powerFactor: number;
-        frequency: number;
-        temperature: number;
-        signalStrength: number;
-        lastUpdate: string;
+    gridConnection: string;
+    zone: {
+        id: string;
+        name: string;
+        code: string;
+        campus: {
+            id: string;
+            name: string;
+        };
     };
-}> = {
-    'building-404': {
-        name: 'Building 404 - Engineering Wing',
-        code: 'ENG-404',
-        description: 'Main server room and engineering facilities',
-        zone: 'Zone A - Research',
-        status: 'operational',
-        mqttTopic: 'energy/buildings/a/eng-404',
-        lvmdp: {
-            voltage: { r: 231, s: 229, t: 230 },
-            current: { r: 124, s: 118, t: 121 },
-            power: 85.2,
-            powerFactor: 0.96,
-            frequency: 50.02,
-            temperature: 42,
-            signalStrength: 98,
-            lastUpdate: '2s ago',
-        }
-    },
-    'eng-quad': {
-        name: 'Engineering Quad',
-        code: 'ENG-QUAD',
-        description: 'Main engineering research facility',
-        zone: 'Zone A - Research',
-        status: 'operational',
-        mqttTopic: 'energy/buildings/a/eng-quad',
-        lvmdp: {
-            voltage: { r: 230, s: 228, t: 229 },
-            current: { r: 145, s: 142, t: 140 },
-            power: 98.5,
-            powerFactor: 0.94,
-            frequency: 50.01,
-            temperature: 38,
-            signalStrength: 95,
-            lastUpdate: '5s ago',
-        }
-    },
-    'science-labs': {
-        name: 'Science Labs',
-        code: 'SCI-LABS',
-        description: 'Chemistry and Physics laboratories',
-        zone: 'Zone A - Research',
-        status: 'warning',
-        mqttTopic: 'energy/buildings/a/sci-labs',
-        lvmdp: {
-            voltage: { r: 225, s: 223, t: 224 },
-            current: { r: 189, s: 195, t: 192 },
-            power: 125.8,
-            powerFactor: 0.85,
-            frequency: 49.98,
-            temperature: 52,
-            signalStrength: 87,
-            lastUpdate: '3s ago',
-        }
-    },
-};
+}
 
 export function BuildingDetail() {
     const { buildingId } = useParams<{ buildingId: string }>();
-    const building = buildingsData[buildingId || ''] || buildingsData['building-404'];
+    const [building, setBuilding] = useState<Building | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+
+    // Mock LVMDP data - will be replaced with real sensor data via WebSocket
+    const lvmdpData = {
+        voltage: { r: 231, s: 229, t: 230 },
+        current: { r: 124, s: 118, t: 121 },
+        power: 85.2,
+        powerFactor: 0.96,
+        frequency: 50.02,
+        temperature: 42,
+        signalStrength: 98,
+        lastUpdate: '2s ago',
+    };
+
+    useEffect(() => {
+        if (buildingId) {
+            fetchBuilding(buildingId);
+        }
+    }, [buildingId]);
+
+    const fetchBuilding = async (id: string) => {
+        setIsLoading(true);
+        setError('');
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch(`http://localhost:3001/api/buildings/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Building not found');
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                setBuilding(data.data);
+            } else {
+                throw new Error(data.error || 'Failed to load building');
+            }
+        } catch (err) {
+            console.error('Failed to fetch building:', err);
+            setError(err instanceof Error ? err.message : 'Failed to load building');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const statusColors: Record<string, string> = {
         operational: 'bg-green-500',
@@ -100,6 +95,34 @@ export function BuildingDetail() {
         offline: 'bg-slate-100 dark:bg-slate-500/10 border-slate-300 dark:border-slate-500/20 text-slate-600 dark:text-slate-400',
     };
 
+    if (isLoading) {
+        return (
+            <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display min-h-screen flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                    <span className="material-symbols-outlined animate-spin text-primary text-[32px]">progress_activity</span>
+                    <p className="text-slate-500">Loading building...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !building) {
+        return (
+            <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display min-h-screen flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3 text-center">
+                    <span className="material-symbols-outlined text-red-500 text-[48px]">error</span>
+                    <p className="text-red-500 text-lg">{error || 'Building not found'}</p>
+                    <Link to="/monitoring" className="text-primary hover:underline flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                        Back to Buildings
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    const mqttTopic = `energy/buildings/${building.zone.code.toLowerCase()}/${building.code.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+
     return (
         <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display min-h-screen flex flex-col overflow-x-hidden">
             {/* Header */}
@@ -113,14 +136,16 @@ export function BuildingDetail() {
                     </div>
                     <div>
                         <h2 className="text-lg font-bold leading-tight tracking-tight">{building.name}</h2>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{building.zone} • LVMDP Monitoring</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {building.zone.name} • {building.zone.campus.name} • LVMDP Monitoring
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
                     {/* Live indicator */}
                     <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/5">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span className="text-xs font-medium text-slate-300">Live • {building.lvmdp.lastUpdate}</span>
+                        <span className="text-xs font-medium text-slate-300">Live • {lvmdpData.lastUpdate}</span>
                     </div>
                     {/* Status badge */}
                     <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border ${statusBgColors[building.status]}`}>
@@ -138,20 +163,28 @@ export function BuildingDetail() {
                 {/* Building Info Header */}
                 <div className="mb-6">
                     <div className="flex flex-wrap items-center gap-4 mb-4">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-white/5 rounded-lg">
+                            <span className="material-symbols-outlined text-slate-500 text-[18px]">tag</span>
+                            <span className="text-sm font-mono">{building.code}</span>
+                        </div>
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/20">
                             <span className="material-symbols-outlined text-primary text-[18px]">hub</span>
-                            <span className="text-sm font-mono text-primary">{building.mqttTopic}</span>
+                            <span className="text-sm font-mono text-primary">{mqttTopic}</span>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-white/5 rounded-lg">
+                            <span className="material-symbols-outlined text-slate-500 text-[18px]">electrical_services</span>
+                            <span className="text-sm capitalize">{building.gridConnection} Grid</span>
                         </div>
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-white/5 rounded-lg">
                             <span className="material-symbols-outlined text-slate-500 text-[18px]">thermostat</span>
-                            <span className="text-sm">{building.lvmdp.temperature}°C</span>
+                            <span className="text-sm">{lvmdpData.temperature}°C</span>
                         </div>
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-white/5 rounded-lg">
                             <span className="material-symbols-outlined text-slate-500 text-[18px]">frequency</span>
-                            <span className="text-sm">{building.lvmdp.frequency} Hz</span>
+                            <span className="text-sm">{lvmdpData.frequency} Hz</span>
                         </div>
                     </div>
-                    <p className="text-slate-500 dark:text-slate-400">{building.description}</p>
+                    <p className="text-slate-500 dark:text-slate-400">{building.description || 'No description available'}</p>
                 </div>
 
                 {/* Quick Stats */}
@@ -161,7 +194,7 @@ export function BuildingDetail() {
                             <span className="material-symbols-outlined text-yellow-500 text-[20px]">electric_bolt</span>
                             <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Active Power</span>
                         </div>
-                        <p className="text-3xl font-bold">{building.lvmdp.power}</p>
+                        <p className="text-3xl font-bold">{lvmdpData.power}</p>
                         <p className="text-xs text-slate-400 mt-1">kW</p>
                     </div>
                     <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
@@ -169,10 +202,10 @@ export function BuildingDetail() {
                             <span className="material-symbols-outlined text-primary text-[20px]">speed</span>
                             <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Power Factor</span>
                         </div>
-                        <p className={`text-3xl font-bold ${building.lvmdp.powerFactor < 0.9 ? 'text-orange-500' : ''}`}>
-                            {building.lvmdp.powerFactor.toFixed(2)}
+                        <p className={`text-3xl font-bold ${lvmdpData.powerFactor < 0.9 ? 'text-orange-500' : ''}`}>
+                            {lvmdpData.powerFactor.toFixed(2)}
                         </p>
-                        <p className="text-xs text-slate-400 mt-1">{building.lvmdp.powerFactor >= 0.95 ? 'Excellent' : building.lvmdp.powerFactor >= 0.9 ? 'Good' : 'Needs Attention'}</p>
+                        <p className="text-xs text-slate-400 mt-1">{lvmdpData.powerFactor >= 0.95 ? 'Excellent' : lvmdpData.powerFactor >= 0.9 ? 'Good' : 'Needs Attention'}</p>
                     </div>
                     <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
                         <div className="flex items-center gap-2 mb-2">
@@ -180,7 +213,7 @@ export function BuildingDetail() {
                             <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Avg Voltage</span>
                         </div>
                         <p className="text-3xl font-bold">
-                            {Math.round((building.lvmdp.voltage.r + building.lvmdp.voltage.s + building.lvmdp.voltage.t) / 3)}
+                            {Math.round((lvmdpData.voltage.r + lvmdpData.voltage.s + lvmdpData.voltage.t) / 3)}
                         </p>
                         <p className="text-xs text-slate-400 mt-1">V (L-N)</p>
                     </div>
@@ -189,7 +222,7 @@ export function BuildingDetail() {
                             <span className="material-symbols-outlined text-green-500 text-[20px]">signal_cellular_alt</span>
                             <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Signal</span>
                         </div>
-                        <p className="text-3xl font-bold">{building.lvmdp.signalStrength}%</p>
+                        <p className="text-3xl font-bold">{lvmdpData.signalStrength}%</p>
                         <p className="text-xs text-green-500 mt-1">Strong</p>
                     </div>
                 </div>
@@ -218,12 +251,27 @@ export function BuildingDetail() {
                         <span className="material-symbols-outlined text-[18px]">schedule</span>
                         Schedule Maintenance
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium">
+                    <button
+                        onClick={() => setIsConfigModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                    >
                         <span className="material-symbols-outlined text-[18px]">settings</span>
                         Configure Sensor
                     </button>
                 </div>
             </main>
+
+            {/* Configure Sensor Modal */}
+            {building && (
+                <ConfigureSensorModal
+                    isOpen={isConfigModalOpen}
+                    onClose={() => setIsConfigModalOpen(false)}
+                    buildingId={building.id}
+                    buildingCode={building.code}
+                    buildingName={building.name}
+                    zoneCode={building.zone.code}
+                />
+            )}
         </div>
     );
 }

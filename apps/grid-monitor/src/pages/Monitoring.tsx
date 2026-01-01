@@ -8,6 +8,7 @@ import { AddBuildingModal } from '../components/monitoring/AddBuildingModal';
 export function Monitoring() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [selectedZone, setSelectedZone] = useState<string | null>(null);
 
     const handleBuildingCreated = (building: { id: string; name: string }) => {
         console.log('Building created:', building);
@@ -17,11 +18,18 @@ export function Monitoring() {
         setRefreshKey(prev => prev + 1);
     };
 
+    const handleZoneSelect = (zoneCode: string | null) => {
+        setSelectedZone(zoneCode);
+    };
+
     return (
         <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white overflow-hidden h-screen flex flex-col">
             <MonitoringHeader />
             <div className="flex flex-1 overflow-hidden">
-                <MonitoringSidebar />
+                <MonitoringSidebar
+                    selectedZone={selectedZone}
+                    onZoneSelect={handleZoneSelect}
+                />
                 <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-4 md:p-8">
                     <div className="max-w-7xl mx-auto flex flex-col gap-6">
                         {/* Breadcrumbs */}
@@ -29,12 +37,20 @@ export function Monitoring() {
                             <a className="hover:text-primary transition-colors" href="/">Dashboard</a>
                             <span className="material-symbols-outlined text-base mx-2">chevron_right</span>
                             <span className="text-slate-900 dark:text-white font-medium">Buildings</span>
+                            {selectedZone && (
+                                <>
+                                    <span className="material-symbols-outlined text-base mx-2">chevron_right</span>
+                                    <span className="text-slate-900 dark:text-white font-medium">Zone {selectedZone}</span>
+                                </>
+                            )}
                         </nav>
 
                         {/* Page Header */}
                         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                             <div>
-                                <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white mb-2">Campus Buildings</h1>
+                                <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white mb-2">
+                                    {selectedZone ? `Zone ${selectedZone} Buildings` : 'Campus Buildings'}
+                                </h1>
                                 <div className="flex items-center gap-4 text-sm">
                                     <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 font-medium border border-green-500/20">
                                         <span className="size-1.5 rounded-full bg-green-500"></span>
@@ -60,7 +76,7 @@ export function Monitoring() {
 
                         {/* Main Grid Layout */}
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                            <BuildingGrid key={refreshKey} />
+                            <BuildingGrid key={refreshKey} selectedZone={selectedZone} />
                             <MonitoringRightSidebar />
                         </div>
 

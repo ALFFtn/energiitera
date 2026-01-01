@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 interface BuildingProps {
@@ -54,7 +55,7 @@ function BuildingCard({ id, name, description, panelCount, totalPower, powerFact
                     </div>
                     <div>
                         <h4 className="font-bold text-slate-900 dark:text-white text-base group-hover:text-primary transition-colors">{name}</h4>
-                        <p className="text-xs text-slate-500 dark:text-[#9ca6ba]">{description}</p>
+                        <p className="text-xs text-slate-500 dark:text-[#9ca6ba]">{description || 'No description'}</p>
                     </div>
                 </div>
                 <div className={`size-3 rounded-full ${statusColor}`}></div>
@@ -92,65 +93,149 @@ function BuildingCard({ id, name, description, panelCount, totalPower, powerFact
 }
 
 interface ZoneData {
+    id: string;
     name: string;
     code: string;
     status: 'normal' | 'warning' | 'critical';
     buildings: BuildingProps[];
 }
 
-// Mock data - will be replaced with API data
-const zonesData: ZoneData[] = [
-    {
-        name: 'Zone A - Research',
-        code: 'A',
-        status: 'normal',
-        buildings: [
-            { id: 'eng-quad', name: 'Engineering Quad', description: 'Main engineering facility', panelCount: 8, totalPower: 245, powerFactor: 0.96, status: 'operational' },
-            { id: 'science-labs', name: 'Science Labs', description: 'Chemistry & Physics', panelCount: 6, totalPower: 180, powerFactor: 0.88, status: 'critical' },
-            { id: 'building-404', name: 'Building 404', description: 'Server Room Wing', panelCount: 12, totalPower: 320, powerFactor: 0.98, status: 'operational' },
-        ]
-    },
-    {
-        name: 'Zone B - Admin',
-        code: 'B',
-        status: 'warning',
-        buildings: [
-            { id: 'admin-hall', name: 'Admin Hall', description: 'Administrative offices', panelCount: 4, totalPower: 85, powerFactor: 0.94, status: 'operational' },
-            { id: 'main-library', name: 'Main Library', description: 'Campus library', panelCount: 5, totalPower: 120, powerFactor: 0.92, status: 'warning' },
-        ]
-    },
-    {
-        name: 'Zone C - Dorms',
-        code: 'C',
-        status: 'normal',
-        buildings: [
-            { id: 'dorms-west', name: 'Dorms West', description: 'Western dormitory', panelCount: 6, totalPower: 95, powerFactor: 0.91, status: 'operational' },
-            { id: 'dorms-east', name: 'Dorms East', description: 'Eastern dormitory', panelCount: 6, totalPower: 88, powerFactor: 0.93, status: 'operational' },
-            { id: 'dorms-north', name: 'Dorms North', description: 'Northern dormitory', panelCount: 4, totalPower: 72, powerFactor: 0.89, status: 'warning' },
-            { id: 'student-center', name: 'Student Center', description: 'Recreation & dining', panelCount: 8, totalPower: 156, powerFactor: 0.95, status: 'operational' },
-        ]
-    },
-    {
-        name: 'Zone D - Sports',
-        code: 'D',
-        status: 'normal',
-        buildings: [
-            { id: 'sports-complex', name: 'Sports Complex', description: 'Main gymnasium', panelCount: 10, totalPower: 280, powerFactor: 0.97, status: 'operational' },
-            { id: 'aquatic-center', name: 'Aquatic Center', description: 'Swimming pools', panelCount: 4, totalPower: 145, powerFactor: 0.94, status: 'offline' },
-        ]
-    },
-];
-
 interface BuildingGridProps {
-    selectedZone?: string;
+    selectedZone?: string | null;
 }
 
 export function BuildingGrid({ selectedZone }: BuildingGridProps) {
+    const [zonesData, setZonesData] = useState<ZoneData[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        fetchBuildings();
+    }, []);
+
+    const fetchBuildings = async () => {
+        setIsLoading(true);
+        setError('');
+        try {
+            const token = localStorage.getItem('accessToken');
+            const response = await fetch('http://localhost:3001/api/campuses', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            const data = await response.json();
+
+            if (data.success && data.data.length > 0) {
+                // Transform API data to zone-based structure
+                const zones: ZoneData[] = [];
+
+                for (const campus of data.data) {
+                    if (campus.zones) {
+                        for (const zone of campus.zones) {
+                            // Fetch buildings for each zone
+                            const buildingsRes = await fetch(`http://localhost:3001/api/zones/${zone.id}/buildings`, {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                },
+                            });
+                            const buildingsData = await buildingsRes.json();
+
+                            const buildings: BuildingProps[] = (buildingsData.data || []).map((b: {
+                                id: string;
+                                name: string;
+                                description?: string;
+                                status?: string;
+                            }) => ({
+                                id: b.id,
+                                name: b.name,
+                                description: b.description || '',
+                                panelCount: 0, // Will be updated with real data
+                                totalPower: Math.floor(Math.random() * 200) + 50, // Mock for now
+                                powerFactor: 0.90 + Math.random() * 0.1, // Mock for now
+                                status: (b.status as BuildingProps['status']) || 'operational',
+                            }));
+
+                            if (buildings.length > 0 || zone.buildings?.length > 0) {
+                                zones.push({
+                                    id: zone.id,
+                                    name: zone.name,
+                                    code: zone.code,
+                                    status: 'normal',
+                                    buildings: buildings.length > 0 ? buildings : (zone.buildings || []).map((b: {
+                                        id: string;
+                                        name: string;
+                                        description?: string;
+                                        status?: string;
+                                    }) => ({
+                                        id: b.id,
+                                        name: b.name,
+                                        description: b.description || '',
+                                        panelCount: 0,
+                                        totalPower: Math.floor(Math.random() * 200) + 50,
+                                        powerFactor: 0.90 + Math.random() * 0.1,
+                                        status: (b.status as BuildingProps['status']) || 'operational',
+                                    })),
+                                });
+                            }
+                        }
+                    }
+                }
+
+                setZonesData(zones);
+            }
+        } catch (err) {
+            console.error('Failed to fetch buildings:', err);
+            setError('Failed to load buildings');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const filteredZones = selectedZone
         ? zonesData.filter(z => z.code === selectedZone)
         : zonesData;
 
     const totalBuildings = filteredZones.reduce((acc, zone) => acc + zone.buildings.length, 0);
+
+    if (isLoading) {
+        return (
+            <div className="xl:col-span-2 flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-3">
+                    <span className="material-symbols-outlined animate-spin text-primary text-[32px]">progress_activity</span>
+                    <p className="text-slate-500">Loading buildings...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="xl:col-span-2 flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-3 text-center">
+                    <span className="material-symbols-outlined text-red-500 text-[32px]">error</span>
+                    <p className="text-red-500">{error}</p>
+                    <button
+                        onClick={fetchBuildings}
+                        className="text-sm text-primary hover:underline"
+                    >
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (totalBuildings === 0) {
+        return (
+            <div className="xl:col-span-2 flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-3 text-center">
+                    <span className="material-symbols-outlined text-slate-400 text-[48px]">apartment</span>
+                    <p className="text-slate-500">No buildings found</p>
+                    <p className="text-xs text-slate-400">Add a new building to get started</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="xl:col-span-2 flex flex-col gap-6">
@@ -159,6 +244,13 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
                     Buildings ({totalBuildings})
                 </h3>
                 <div className="flex gap-2">
+                    <button
+                        onClick={fetchBuildings}
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded transition-colors"
+                        title="Refresh"
+                    >
+                        <span className="material-symbols-outlined text-[18px] text-slate-400">refresh</span>
+                    </button>
                     <select className="bg-white dark:bg-[#1e232e] border border-slate-200 dark:border-[#282e39] text-xs rounded px-2 py-1 text-slate-600 dark:text-[#9ca6ba]">
                         <option>Sort by: Name</option>
                         <option>Sort by: Load</option>
@@ -168,7 +260,7 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
             </div>
 
             {filteredZones.map((zone) => (
-                <div key={zone.code} className="flex flex-col gap-4">
+                <div key={zone.id} className="flex flex-col gap-4">
                     <div className="flex items-center gap-3">
                         <div className={`size-2.5 rounded-full ${zone.status === 'critical' ? 'bg-red-500' : zone.status === 'warning' ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
                         <h4 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{zone.name}</h4>
