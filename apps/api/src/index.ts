@@ -24,9 +24,9 @@ worker.initializeSocket(httpServer);
 // Security middleware
 app.use(helmet());
 
-// CORS
+// CORS - allow any origin in development
 app.use(cors({
-    origin: env.CORS_ORIGIN,
+    origin: true,  // Allow all origins
     credentials: true,
 }));
 
@@ -59,14 +59,28 @@ app.use(errorHandler);
 // Start server
 const PORT = env.PORT;
 
-httpServer.listen(PORT, async () => {
+httpServer.listen(PORT, '0.0.0.0', async () => {
+    // Get local IP for network access
+    const { networkInterfaces } = await import('os');
+    const nets = networkInterfaces();
+    let localIP = 'localhost';
+    for (const name of Object.keys(nets)) {
+        for (const net of nets[name] || []) {
+            if (net.family === 'IPv4' && !net.internal) {
+                localIP = net.address;
+                break;
+            }
+        }
+    }
+
     console.log(`
 🚀 Dashboard Energy API Server
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📡 Server running on: http://localhost:${PORT}
+📡 Local:   http://localhost:${PORT}
+📡 Network: http://${localIP}:${PORT}
 🔧 Environment: ${env.NODE_ENV}
-📚 API Base URL: http://localhost:${PORT}/api
-🔌 Socket.io: ws://localhost:${PORT}
+📚 API Base URL: http://${localIP}:${PORT}/api
+🔌 Socket.io: ws://${localIP}:${PORT}
 ❤️  Health Check: http://localhost:${PORT}/health
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
