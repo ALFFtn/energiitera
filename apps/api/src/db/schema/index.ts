@@ -7,6 +7,9 @@ export * from './buildings';
 // Panels & Readings
 export * from './panels';
 
+// Building Sensor Readings (LVMDP)
+export * from './sensorReadings';
+
 // Alerts
 export * from './alerts';
 

@@ -3,6 +3,7 @@ import { MqttService } from './mqttService';
 import { socketService } from './socketService';
 import { dataProcessor } from './dataProcessor';
 import { BatchWriter } from './batchWriter';
+import { saveSensorReading, flushSensorReadings } from '../services/sensorReadingService';
 
 export interface WorkerConfig {
     mqtt: {
@@ -23,6 +24,8 @@ export class Worker {
     private batchWriter: BatchWriter;
     private isRunning = false;
     private metricsCount = 0;
+    private flushInterval: NodeJS.Timeout | null = null;
+    private sensorBuffer: Map<string, Record<string, number>> = new Map();
 
     constructor(private config: WorkerConfig) {
         this.mqttService = new MqttService({
@@ -101,6 +104,12 @@ export class Worker {
             this.metricsCount++;
             // Broadcast to Socket.io clients
             socketService.broadcastBuildingSensor(zoneCode, buildingCode, sensorId, parameter, value, unit);
+
+            // Buffer data for database storage
+            const key = `${buildingCode}-${sensorId}`;
+            const existing = this.sensorBuffer.get(key) || {};
+            existing[parameter] = value;
+            this.sensorBuffer.set(key, existing);
         });
 
         this.mqttService.on('error', (error) => {
@@ -109,6 +118,19 @@ export class Worker {
 
         // Start batch writer
         this.batchWriter.start();
+
+        // Start sensor data flush interval (every 10 seconds)
+        this.flushInterval = setInterval(async () => {
+            // Save buffered sensor data to database
+            for (const [key, data] of this.sensorBuffer.entries()) {
+                const [buildingCode, sensorId] = key.split('-');
+                await saveSensorReading(buildingCode, sensorId, data);
+            }
+            this.sensorBuffer.clear();
+
+            // Flush to database
+            await flushSensorReadings();
+        }, 10000);
 
         // Connect to MQTT broker
         try {

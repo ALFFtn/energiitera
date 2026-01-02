@@ -130,4 +130,35 @@ router.get('/buildings/map-data', authenticate, async (req, res, next) => {
     }
 });
 
+// Building sensor readings
+router.get('/buildings/:id/readings', authenticate, async (req, res, next) => {
+    try {
+        const { getSensorReadings } = await import('../services/sensorReadingService.js');
+        const limit = parseInt(req.query.limit as string) || 1000;
+        const readings = await getSensorReadings(req.params.id, { limit });
+        res.json({ success: true, data: readings, count: readings.length });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Export readings as CSV
+router.get('/buildings/:id/readings/export', authenticate, async (req, res, next) => {
+    try {
+        const { exportReadingsAsCSV } = await import('../services/sensorReadingService.js');
+        const building = await buildingService.getBuildingById(req.params.id);
+        const csvData = await exportReadingsAsCSV(req.params.id);
+
+        // Convert to CSV string
+        const csvContent = csvData.map(row => row.join(',')).join('\n');
+
+        // Send as file download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="sensor-readings-${building?.code || req.params.id}-${new Date().toISOString().split('T')[0]}.csv"`);
+        res.send(csvContent);
+    } catch (error) {
+        next(error);
+    }
+});
+
 export default router;

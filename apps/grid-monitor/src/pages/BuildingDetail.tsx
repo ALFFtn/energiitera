@@ -61,6 +61,96 @@ export function BuildingDetail() {
         return `${Math.floor(seconds / 60)}m ago`;
     };
 
+    // Export sensor data to CSV (from database or current snapshot)
+    const exportToCSV = async () => {
+        if (!building) return;
+
+        const token = localStorage.getItem('accessToken');
+
+        try {
+            // Try to export from database first
+            const response = await fetch(`http://localhost:3001/api/buildings/${building.id}/readings/export`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                // Download the file from API
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `sensor-readings-${building.code}-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                return;
+            }
+        } catch {
+            console.log('API export failed, using current snapshot');
+        }
+
+        // Fallback: Export current snapshot
+        const SQRT3 = Math.sqrt(3);
+        const timestamp = new Date().toISOString();
+        const dateStr = new Date().toLocaleDateString('id-ID');
+        const timeStr = new Date().toLocaleTimeString('id-ID');
+
+        // Calculate L-L voltages
+        const voltageRS = ((voltage.r + voltage.s) / 2) * SQRT3;
+        const voltageST = ((voltage.s + voltage.t) / 2) * SQRT3;
+        const voltageTR = ((voltage.t + voltage.r) / 2) * SQRT3;
+        const reactivePower = power * Math.tan(Math.acos(powerFactor || 0.95));
+
+        // CSV Headers and Data
+        const csvRows = [
+            ['LVMDP Sensor Report (Current Snapshot)'],
+            [`Building: ${building.name} (${building.code})`],
+            [`Zone: ${building.zone.name}`],
+            [`Campus: ${building.zone.campus.name}`],
+            [`Export Date: ${dateStr} ${timeStr}`],
+            [''],
+            ['Parameter', 'Value', 'Unit'],
+            ['Voltage L-N Phase R', voltage.r.toFixed(2), 'V'],
+            ['Voltage L-N Phase S', voltage.s.toFixed(2), 'V'],
+            ['Voltage L-N Phase T', voltage.t.toFixed(2), 'V'],
+            ['Voltage L-N Average', voltage.avg.toFixed(2), 'V'],
+            ['Voltage L-L R-S', voltageRS.toFixed(2), 'V'],
+            ['Voltage L-L S-T', voltageST.toFixed(2), 'V'],
+            ['Voltage L-L T-R', voltageTR.toFixed(2), 'V'],
+            ['Current Phase R', current.r.toFixed(2), 'A'],
+            ['Current Phase S', current.s.toFixed(2), 'A'],
+            ['Current Phase T', current.t.toFixed(2), 'A'],
+            ['Current Total', current.total.toFixed(2), 'A'],
+            ['Active Power', power.toFixed(2), 'kW'],
+            ['Reactive Power', reactivePower.toFixed(2), 'kVAR'],
+            ['Power Factor', powerFactor.toFixed(3), ''],
+            ['Frequency', frequency.toFixed(2), 'Hz'],
+            ['Temperature', temperature.toFixed(1), '°C'],
+            ['THD Voltage', thdVoltage.toFixed(2), '%'],
+            ['THD Current', thdCurrent.toFixed(2), '%'],
+            [''],
+            [`Timestamp: ${timestamp}`],
+            [`Connection Status: ${isConnected ? 'Online' : 'Offline'}`],
+        ];
+
+        // Convert to CSV string
+        const csvContent = csvRows.map(row => row.join(',')).join('\n');
+
+        // Create blob and download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `lvmdp-snapshot-${building.code}-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     useEffect(() => {
         if (buildingId) {
             fetchBuilding(buildingId);
@@ -276,9 +366,12 @@ export function BuildingDetail() {
 
                 {/* Quick Actions */}
                 <div className="flex flex-wrap gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1e232e] border border-slate-200 dark:border-[#282e39] rounded-lg hover:border-primary dark:hover:border-primary transition-colors text-sm font-medium">
+                    <button
+                        onClick={exportToCSV}
+                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1e232e] border border-slate-200 dark:border-[#282e39] rounded-lg hover:border-primary dark:hover:border-primary transition-colors text-sm font-medium"
+                    >
                         <span className="material-symbols-outlined text-[18px]">download</span>
-                        Export Report
+                        Export CSV
                     </button>
                     <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1e232e] border border-slate-200 dark:border-[#282e39] rounded-lg hover:border-primary dark:hover:border-primary transition-colors text-sm font-medium">
                         <span className="material-symbols-outlined text-[18px]">history</span>
