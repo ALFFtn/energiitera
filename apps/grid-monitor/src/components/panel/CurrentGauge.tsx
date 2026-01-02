@@ -55,20 +55,10 @@ export function CurrentGauge({ phaseR = 0, phaseS = 0, phaseT = 0, capacity = 30
                         </span>
                     </div>
                 </div>
-                {/* Phase breakdown */}
-                <div className="w-full mt-4 grid grid-cols-3 gap-2 text-xs text-center">
-                    <div className="bg-slate-800/50 rounded-lg py-1.5 px-2">
-                        <span className="text-cyan-400 font-bold">R</span>
-                        <span className="text-white ml-1 tabular-nums">{phaseR.toFixed(1)}A</span>
-                    </div>
-                    <div className="bg-slate-800/50 rounded-lg py-1.5 px-2">
-                        <span className="text-yellow-400 font-bold">S</span>
-                        <span className="text-white ml-1 tabular-nums">{phaseS.toFixed(1)}A</span>
-                    </div>
-                    <div className="bg-slate-800/50 rounded-lg py-1.5 px-2">
-                        <span className="text-blue-400 font-bold">T</span>
-                        <span className="text-white ml-1 tabular-nums">{phaseT.toFixed(1)}A</span>
-                    </div>
+                {/* Capacity info */}
+                <div className="w-full mt-4 flex justify-between text-xs text-slate-500 font-mono px-8">
+                    <span>CAP: {capacity}A</span>
+                    <span>AVG: {avgCurrent.toFixed(1)}A</span>
                 </div>
             </div>
         </div>

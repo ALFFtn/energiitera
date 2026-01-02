@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ProfileMenu } from '../components/common/ProfileMenu';
 import { VoltageGauge } from '../components/panel/VoltageGauge';
-import { CurrentGauge } from '../components/panel/CurrentGauge';
+import { LineVoltageGauge } from '../components/panel/LineVoltageGauge';
 import { PowerFactorGauge } from '../components/panel/PowerFactorGauge';
 import { PhaseLoadBalance } from '../components/panel/PhaseLoadBalance';
 import { SignalQuality } from '../components/panel/SignalQuality';
 import { EventLog } from '../components/panel/EventLog';
 import { ConfigureSensorModal } from '../components/building/ConfigureSensorModal';
+import { ParameterChart } from '../components/building/ParameterChart';
 import { useBuildingSensor } from '../hooks/useSocket';
 
 interface Building {
@@ -238,19 +239,39 @@ export function BuildingDetail() {
                         phaseS={voltage.s}
                         phaseT={voltage.t}
                     />
-                    <CurrentGauge
+                    <LineVoltageGauge
+                        phaseR={voltage.r}
+                        phaseS={voltage.s}
+                        phaseT={voltage.t}
+                    />
+                    <PowerFactorGauge value={powerFactor} />
+                    <PhaseLoadBalance
                         phaseR={current.r}
                         phaseS={current.s}
                         phaseT={current.t}
                     />
-                    <PowerFactorGauge value={powerFactor} />
-                    <PhaseLoadBalance />
                     <SignalQuality
                         frequency={frequency}
                         thdVoltage={thdVoltage}
                         thdCurrent={thdCurrent}
                     />
                     <EventLog />
+                </div>
+
+                {/* Parameter History Chart */}
+                <div className="mb-8">
+                    <ParameterChart
+                        voltage_r={voltage.r}
+                        voltage_s={voltage.s}
+                        voltage_t={voltage.t}
+                        current_r={current.r}
+                        current_s={current.s}
+                        current_t={current.t}
+                        power={power}
+                        power_factor={powerFactor}
+                        frequency={frequency}
+                        temperature={temperature}
+                    />
                 </div>
 
                 {/* Quick Actions */}
