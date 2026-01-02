@@ -9,6 +9,7 @@ import { SignalQuality } from '../components/panel/SignalQuality';
 import { EventLog } from '../components/panel/EventLog';
 import { ConfigureSensorModal } from '../components/building/ConfigureSensorModal';
 import { ParameterChart } from '../components/building/ParameterChart';
+import { TrendChart24h } from '../components/building/TrendChart24h';
 import { useBuildingSensor } from '../hooks/useSocket';
 
 interface Building {
@@ -346,6 +347,22 @@ export function BuildingDetail() {
                         thdCurrent={thdCurrent}
                     />
                     <EventLog />
+                </div>
+
+                {/* 24h Trend Charts */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <TrendChart24h
+                        currentValue={power}
+                        label="Power Trend"
+                        unit="kW"
+                        color="#f59e0b"
+                    />
+                    <TrendChart24h
+                        currentValue={voltage.avg}
+                        label="Voltage Trend (L-N)"
+                        unit="V"
+                        color="#22d3ee"
+                    />
                 </div>
 
                 {/* Parameter History Chart */}
