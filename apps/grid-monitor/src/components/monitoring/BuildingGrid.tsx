@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAllBuildingsSensor } from '../../hooks/useSocket';
+import { API_URL } from '../../config/api';
 
 interface BuildingProps {
     id: string;
@@ -140,7 +141,7 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
         setError('');
         try {
             const token = localStorage.getItem('accessToken');
-            const response = await fetch('http://localhost:3001/api/campuses', {
+            const response = await fetch(`${API_URL}/api/campuses`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -155,7 +156,7 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
                     if (campus.zones) {
                         for (const zone of campus.zones) {
                             // Fetch buildings for each zone
-                            const buildingsRes = await fetch(`http://localhost:3001/api/zones/${zone.id}/buildings`, {
+                            const buildingsRes = await fetch(`${API_URL}/api/zones/${zone.id}/buildings`, {
                                 headers: {
                                     'Authorization': `Bearer ${token}`,
                                 },

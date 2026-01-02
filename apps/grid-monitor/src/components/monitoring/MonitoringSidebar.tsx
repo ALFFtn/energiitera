@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../../config/api';
 
 interface Zone {
     id: string;
@@ -25,7 +26,7 @@ export function MonitoringSidebar({ selectedZone, onZoneSelect }: MonitoringSide
         setIsLoading(true);
         try {
             const token = localStorage.getItem('accessToken');
-            const response = await fetch('http://localhost:3001/api/campuses', {
+            const response = await fetch(`${API_URL}/api/campuses`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -76,8 +77,8 @@ export function MonitoringSidebar({ selectedZone, onZoneSelect }: MonitoringSide
                     <button
                         onClick={() => onZoneSelect(null)}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full text-left ${selectedZone === null
-                                ? 'bg-primary/10 text-primary dark:text-white dark:bg-[#282e39]'
-                                : 'text-slate-600 dark:text-[#9ca6ba] hover:bg-slate-100 dark:hover:bg-[#1e232e]'
+                            ? 'bg-primary/10 text-primary dark:text-white dark:bg-[#282e39]'
+                            : 'text-slate-600 dark:text-[#9ca6ba] hover:bg-slate-100 dark:hover:bg-[#1e232e]'
                             }`}
                     >
                         <div className="size-2.5 rounded-full bg-primary"></div>
@@ -97,8 +98,8 @@ export function MonitoringSidebar({ selectedZone, onZoneSelect }: MonitoringSide
                                 key={zone.id}
                                 onClick={() => onZoneSelect(zone.code)}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors w-full text-left ${selectedZone === zone.code
-                                        ? 'bg-primary/10 text-primary dark:text-white dark:bg-[#282e39]'
-                                        : 'text-slate-600 dark:text-[#9ca6ba] hover:bg-slate-100 dark:hover:bg-[#1e232e]'
+                                    ? 'bg-primary/10 text-primary dark:text-white dark:bg-[#282e39]'
+                                    : 'text-slate-600 dark:text-[#9ca6ba] hover:bg-slate-100 dark:hover:bg-[#1e232e]'
                                     }`}
                             >
                                 <div className={`size-2.5 rounded-full ${statusColors[zone.status] || 'bg-green-500'}`}></div>

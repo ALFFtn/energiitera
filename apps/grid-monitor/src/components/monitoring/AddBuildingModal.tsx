@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../../config/api';
 
 interface Zone {
     id: string;
@@ -42,7 +43,7 @@ export function AddBuildingModal({ isOpen, onClose, onSuccess }: AddBuildingModa
         setIsLoadingZones(true);
         try {
             const token = localStorage.getItem('accessToken');
-            const response = await fetch('http://localhost:3001/api/campuses', {
+            const response = await fetch(`${API_URL}/api/campuses`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -81,7 +82,7 @@ export function AddBuildingModal({ isOpen, onClose, onSuccess }: AddBuildingModa
         try {
             const token = localStorage.getItem('accessToken');
 
-            const response = await fetch('http://localhost:3001/api/buildings', {
+            const response = await fetch(`${API_URL}/api/buildings`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

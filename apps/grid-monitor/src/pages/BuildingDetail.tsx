@@ -11,6 +11,7 @@ import { ConfigureSensorModal } from '../components/building/ConfigureSensorModa
 import { ParameterChart } from '../components/building/ParameterChart';
 import { TrendChart24h } from '../components/building/TrendChart24h';
 import { useBuildingSensor } from '../hooks/useSocket';
+import { API_URL } from '../config/api';
 
 interface Building {
     id: string;
@@ -70,7 +71,7 @@ export function BuildingDetail() {
 
         try {
             // Try to export from database first
-            const response = await fetch(`http://localhost:3001/api/buildings/${building.id}/readings/export`, {
+            const response = await fetch(`${API_URL}/api/buildings/${building.id}/readings/export`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -163,7 +164,7 @@ export function BuildingDetail() {
         setError('');
         try {
             const token = localStorage.getItem('accessToken');
-            const response = await fetch(`http://localhost:3001/api/buildings/${id}`, {
+            const response = await fetch(`${API_URL}/api/buildings/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
