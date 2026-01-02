@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAllBuildingsSensor } from '../../hooks/useSocket';
 
 interface BuildingProps {
     id: string;
+    code: string;  // Building code for MQTT matching
     name: string;
     description: string;
-    panelCount: number;
     totalPower: number;
     powerFactor: number;
     status: 'operational' | 'warning' | 'critical' | 'offline';
 }
 
-function BuildingCard({ id, name, description, panelCount, totalPower, powerFactor, status }: BuildingProps) {
+function BuildingCard({ id, name, description, totalPower, powerFactor, status }: BuildingProps) {
     const isOffline = status === 'offline';
     const isCritical = status === 'critical';
     const isWarning = status === 'warning';
@@ -61,21 +62,17 @@ function BuildingCard({ id, name, description, panelCount, totalPower, powerFact
                 <div className={`size-3 rounded-full ${statusColor}`}></div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 mb-4">
-                <div>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Panels</p>
-                    <p className="text-xl font-bold text-slate-900 dark:text-white">{panelCount}</p>
-                </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                     <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Load</p>
                     <div className="flex items-baseline gap-1">
-                        <span className="text-xl font-bold text-slate-900 dark:text-white">{totalPower}</span>
+                        <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">{totalPower.toFixed(1)}</span>
                         <span className="text-xs text-slate-500">kW</span>
                     </div>
                 </div>
                 <div>
                     <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">PF</p>
-                    <span className="text-xl font-bold text-slate-900 dark:text-white">{powerFactor.toFixed(2)}</span>
+                    <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">{powerFactor.toFixed(2)}</span>
                 </div>
             </div>
 
@@ -104,10 +101,35 @@ interface BuildingGridProps {
     selectedZone?: string | null;
 }
 
+interface BuildingCardWithLiveDataProps extends BuildingProps {
+    liveData?: {
+        power: number;
+        powerFactor: number;
+        status: 'online' | 'offline';
+    } | null;
+}
+
+function BuildingCardWithLiveData({ liveData, ...props }: BuildingCardWithLiveDataProps) {
+    // Override with live data if available
+    const totalPower = liveData?.power ?? props.totalPower;
+    const powerFactor = liveData?.powerFactor ?? props.powerFactor;
+    const status = liveData?.status === 'online' ? props.status : props.status;
+
+    return (
+        <BuildingCard
+            {...props}
+            totalPower={totalPower}
+            powerFactor={powerFactor}
+            status={status}
+        />
+    );
+}
+
 export function BuildingGrid({ selectedZone }: BuildingGridProps) {
     const [zonesData, setZonesData] = useState<ZoneData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const { getBuildingData, isConnected, totalPower } = useAllBuildingsSensor();
 
     useEffect(() => {
         fetchBuildings();
@@ -142,16 +164,17 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
 
                             const buildings: BuildingProps[] = (buildingsData.data || []).map((b: {
                                 id: string;
+                                code: string;
                                 name: string;
                                 description?: string;
                                 status?: string;
                             }) => ({
                                 id: b.id,
+                                code: b.code || '',
                                 name: b.name,
                                 description: b.description || '',
-                                panelCount: 0, // Will be updated with real data
-                                totalPower: Math.floor(Math.random() * 200) + 50, // Mock for now
-                                powerFactor: 0.90 + Math.random() * 0.1, // Mock for now
+                                totalPower: 0, // Will be updated by real-time data
+                                powerFactor: 0.95, // Default, will be updated by real-time data
                                 status: (b.status as BuildingProps['status']) || 'operational',
                             }));
 
@@ -163,16 +186,17 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
                                     status: 'normal',
                                     buildings: buildings.length > 0 ? buildings : (zone.buildings || []).map((b: {
                                         id: string;
+                                        code: string;
                                         name: string;
                                         description?: string;
                                         status?: string;
                                     }) => ({
                                         id: b.id,
+                                        code: b.code || '',
                                         name: b.name,
                                         description: b.description || '',
-                                        panelCount: 0,
-                                        totalPower: Math.floor(Math.random() * 200) + 50,
-                                        powerFactor: 0.90 + Math.random() * 0.1,
+                                        totalPower: 0,
+                                        powerFactor: 0.95,
                                         status: (b.status as BuildingProps['status']) || 'operational',
                                     })),
                                 });
@@ -240,9 +264,22 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
     return (
         <div className="xl:col-span-2 flex flex-col gap-6">
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                    Buildings ({totalBuildings})
-                </h3>
+                <div className="flex items-center gap-4">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                        Buildings ({totalBuildings})
+                    </h3>
+                    {isConnected && (
+                        <span className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20">
+                            <span className="size-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                            Live
+                        </span>
+                    )}
+                    {totalPower > 0 && (
+                        <span className="text-sm text-slate-500">
+                            Total: <span className="font-bold text-slate-700 dark:text-white">{totalPower.toFixed(1)} kW</span>
+                        </span>
+                    )}
+                </div>
                 <div className="flex gap-2">
                     <button
                         onClick={fetchBuildings}
@@ -267,9 +304,17 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
                         <span className="text-xs text-slate-400">({zone.buildings.length} buildings)</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {zone.buildings.map((building) => (
-                            <BuildingCard key={building.id} {...building} />
-                        ))}
+                        {zone.buildings.map((building) => {
+                            // Get live data for this building using its code
+                            const liveData = getBuildingData(building.code);
+                            return (
+                                <BuildingCardWithLiveData
+                                    key={building.id}
+                                    {...building}
+                                    liveData={liveData}
+                                />
+                            );
+                        })}
                     </div>
                 </div>
             ))}

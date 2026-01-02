@@ -153,3 +153,109 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
         thdCurrent: sensorData.thd_i || 0,
     };
 }
+
+// Hook to get ALL buildings sensor data for dashboard
+interface BuildingSensorSummary {
+    buildingCode: string;
+    power: number;
+    powerFactor: number;
+    voltage: number;
+    current: number;
+    status: 'online' | 'offline';
+    lastUpdate: Date;
+}
+
+export function useAllBuildingsSensor() {
+    const { socket, isConnected } = useSocket();
+    const [buildingsData, setBuildingsData] = useState<Map<string, BuildingSensorSummary>>(new Map());
+    const [totalPower, setTotalPower] = useState(0);
+    const [avgPowerFactor, setAvgPowerFactor] = useState(0);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        // Listen for all sensor parameter updates
+        const handleParameterUpdate = (data: {
+            zoneCode: string;
+            buildingCode: string;
+            sensorId: string;
+            parameter: string;
+            value: number;
+            timestamp: Date;
+        }) => {
+            const key = data.buildingCode.toUpperCase();
+
+            setBuildingsData(prev => {
+                const newMap = new Map(prev);
+                const existing = newMap.get(key) || {
+                    buildingCode: key,
+                    power: 0,
+                    powerFactor: 0.95,
+                    voltage: 220,
+                    current: 0,
+                    status: 'online' as const,
+                    lastUpdate: new Date(),
+                };
+
+                // Update specific parameter
+                switch (data.parameter) {
+                    case 'power':
+                        existing.power = data.value;
+                        break;
+                    case 'power_factor':
+                        existing.powerFactor = data.value;
+                        break;
+                    case 'voltage_r':
+                    case 'voltage_s':
+                    case 'voltage_t':
+                        existing.voltage = data.value;
+                        break;
+                    case 'current_r':
+                    case 'current_s':
+                    case 'current_t':
+                        existing.current = (existing.current || 0) + data.value / 3;
+                        break;
+                }
+
+                existing.status = 'online';
+                existing.lastUpdate = new Date(data.timestamp);
+                newMap.set(key, existing);
+
+                return newMap;
+            });
+        };
+
+        socket.on('sensor:parameter', handleParameterUpdate);
+
+        return () => {
+            socket.off('sensor:parameter', handleParameterUpdate);
+        };
+    }, [socket]);
+
+    // Calculate totals whenever buildingsData changes
+    useEffect(() => {
+        const buildings = Array.from(buildingsData.values());
+        const total = buildings.reduce((sum, b) => sum + (b.power || 0), 0);
+        setTotalPower(total);
+
+        const pfs = buildings.filter(b => b.powerFactor > 0);
+        if (pfs.length > 0) {
+            const avgPf = pfs.reduce((sum, b) => sum + b.powerFactor, 0) / pfs.length;
+            setAvgPowerFactor(avgPf);
+        }
+    }, [buildingsData]);
+
+    // Get sensor data for a specific building
+    const getBuildingData = useCallback((buildingCode: string): BuildingSensorSummary | null => {
+        return buildingsData.get(buildingCode.toUpperCase()) || null;
+    }, [buildingsData]);
+
+    return {
+        buildingsData,
+        getBuildingData,
+        totalPower,
+        avgPowerFactor,
+        isConnected,
+        buildingCount: buildingsData.size,
+    };
+}
