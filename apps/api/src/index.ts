@@ -21,13 +21,16 @@ const httpServer = createServer(app);
 const worker = createWorker();
 worker.initializeSocket(httpServer);
 
-// Security middleware
-app.use(helmet());
-
-// CORS - allow any origin in development
+// CORS - allow any origin in development (must be before helmet)
 app.use(cors({
     origin: true,  // Allow all origins
     credentials: true,
+}));
+
+// Security middleware - configured for API (cross-origin) use
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: false, // Not needed for JSON API
 }));
 
 // Body parsing
