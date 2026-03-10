@@ -105,9 +105,18 @@ server {
     root ${PROJECT_DIR}/apps/grid-monitor/dist;
     index index.html;
 
-    # SPA fallback
+    # Cache-busting: aset build Vite punya hash di nama file
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # HTML tidak boleh di-cache (agar selalu load versi terbaru)
     location / {
         try_files \$uri \$uri/ /index.html;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires 0;
     }
 
     # API proxy
