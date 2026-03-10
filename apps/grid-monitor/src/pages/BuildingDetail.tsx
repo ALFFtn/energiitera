@@ -53,6 +53,7 @@ export function BuildingDetail() {
     } = useBuildingSensor({
         buildingCode: building?.code || '',
         zoneCode: building?.zone?.code || '',
+        buildingId: buildingId,
     });
 
     // Format last update time
@@ -357,12 +358,16 @@ export function BuildingDetail() {
                         label="Power Trend"
                         unit="kW"
                         color="#f59e0b"
+                        buildingId={buildingId}
+                        dataKey="power"
                     />
                     <TrendChart24h
                         currentValue={voltage.avg}
                         label="Voltage Trend (L-N)"
                         unit="V"
                         color="#22d3ee"
+                        buildingId={buildingId}
+                        dataKey="voltageR"
                     />
                 </div>
 
@@ -379,6 +384,7 @@ export function BuildingDetail() {
                         power_factor={powerFactor}
                         frequency={frequency}
                         temperature={temperature}
+                        buildingId={buildingId}
                     />
                 </div>
 

@@ -130,6 +130,56 @@ export async function getSensorReadingsInRange(
         .limit(limit);
 }
 
+// Get the latest sensor reading for a building
+export async function getLatestSensorReading(
+    buildingId: string
+): Promise<typeof buildingSensorReadings.$inferSelect | null> {
+    const results = await db.select()
+        .from(buildingSensorReadings)
+        .where(eq(buildingSensorReadings.buildingId, buildingId))
+        .orderBy(desc(buildingSensorReadings.timestamp))
+        .limit(1);
+
+    return results[0] || null;
+}
+
+// Get latest sensor reading for all buildings at once
+export async function getAllLatestReadings(): Promise<Array<{
+    buildingId: string;
+    buildingCode: string;
+    reading: typeof buildingSensorReadings.$inferSelect;
+}>> {
+    // Get all buildings
+    const allBuildings = await db.select({
+        id: buildings.id,
+        code: buildings.code,
+    }).from(buildings);
+
+    const results: Array<{
+        buildingId: string;
+        buildingCode: string;
+        reading: typeof buildingSensorReadings.$inferSelect;
+    }> = [];
+
+    for (const b of allBuildings) {
+        const latest = await db.select()
+            .from(buildingSensorReadings)
+            .where(eq(buildingSensorReadings.buildingId, b.id))
+            .orderBy(desc(buildingSensorReadings.timestamp))
+            .limit(1);
+
+        if (latest[0]) {
+            results.push({
+                buildingId: b.id,
+                buildingCode: b.code,
+                reading: latest[0],
+            });
+        }
+    }
+
+    return results;
+}
+
 // Export readings as CSV-ready array
 export async function exportReadingsAsCSV(buildingId: string): Promise<string[][]> {
     const readings = await getSensorReadings(buildingId, { limit: 10000 });

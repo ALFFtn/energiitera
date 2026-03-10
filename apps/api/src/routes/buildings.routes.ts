@@ -142,6 +142,28 @@ router.get('/buildings/:id/readings', authenticate, async (req, res, next) => {
     }
 });
 
+// Get latest sensor reading for a specific building
+router.get('/buildings/:id/readings/latest', authenticate, async (req, res, next) => {
+    try {
+        const { getLatestSensorReading } = await import('../services/sensorReadingService.js');
+        const reading = await getLatestSensorReading(req.params.id);
+        res.json({ success: true, data: reading });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Get latest sensor readings for ALL buildings (for dashboard)
+router.get('/buildings-latest-readings', authenticate, async (req, res, next) => {
+    try {
+        const { getAllLatestReadings } = await import('../services/sensorReadingService.js');
+        const readings = await getAllLatestReadings();
+        res.json({ success: true, data: readings });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // Export readings as CSV
 router.get('/buildings/:id/readings/export', authenticate, async (req, res, next) => {
     try {

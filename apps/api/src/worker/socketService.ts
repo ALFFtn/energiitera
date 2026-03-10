@@ -98,7 +98,10 @@ export class SocketService {
             return;
         }
 
-        const channel = `building:${zoneCode}:${buildingCode}`;
+        // Normalize case: broadcast to both lowercase and uppercase channel variants
+        // so clients subscribing with either case receive data
+        const channelLower = `building:${zoneCode.toLowerCase()}:${buildingCode.toLowerCase()}`;
+        const channelUpper = `building:${zoneCode.toUpperCase()}:${buildingCode.toUpperCase()}`;
         const payload = {
             zoneCode,
             buildingCode,
@@ -114,7 +117,10 @@ export class SocketService {
             console.log(`📡 Broadcasting to ${this.getConnectedClientsCount()} clients:`, `${parameter}=${value}`);
         }
 
-        this.io.to(channel).emit('sensor:parameter', payload);
+        this.io.to(channelLower).emit('sensor:parameter', payload);
+        if (channelLower !== channelUpper) {
+            this.io.to(channelUpper).emit('sensor:parameter', payload);
+        }
         // Also broadcast to all connected clients
         this.io.emit('sensor:parameter', payload);
     }

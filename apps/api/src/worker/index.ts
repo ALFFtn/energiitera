@@ -123,7 +123,10 @@ export class Worker {
         this.flushInterval = setInterval(async () => {
             // Save buffered sensor data to database
             for (const [key, data] of this.sensorBuffer.entries()) {
-                const [buildingCode, sensorId] = key.split('-');
+                // Key format: buildingCode-sensorId (sensorId may contain dashes)
+                const dashIdx = key.indexOf('-');
+                const buildingCode = key.substring(0, dashIdx);
+                const sensorId = key.substring(dashIdx + 1);
                 await saveSensorReading(buildingCode, sensorId, data);
             }
             this.sensorBuffer.clear();

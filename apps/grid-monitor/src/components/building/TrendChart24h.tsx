@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
+import { API_URL } from '../../config/api';
 
 interface TrendChart24hProps {
     currentValue: number;
     label?: string;
     unit?: string;
     color?: string;
+    buildingId?: string;
+    /** Which DB column to use for historical data (e.g. 'power', 'voltageR') */
+    dataKey?: string;
 }
 
 interface DataPoint {
@@ -18,11 +22,56 @@ export function TrendChart24h({
     currentValue,
     label = 'Power Consumption',
     unit = 'kW',
-    color = '#0d59f2'
+    color = '#0d59f2',
+    buildingId,
+    dataKey = 'power',
 }: TrendChart24hProps) {
     const [history, setHistory] = useState<DataPoint[]>([]);
     const lastValueRef = useRef(currentValue);
     const lastUpdateRef = useRef(Date.now());
+    const initialFetchDone = useRef(false);
+    const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+    const svgRef = useRef<SVGSVGElement>(null);
+
+    // Fetch historical data from DB on mount
+    useEffect(() => {
+        if (!buildingId || initialFetchDone.current) return;
+        initialFetchDone.current = true;
+
+        const fetchHistory = async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                const res = await fetch(
+                    `${API_URL}/api/buildings/${buildingId}/readings?limit=200`,
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
+                const json = await res.json();
+                if (json.success && Array.isArray(json.data)) {
+                    // Data comes newest-first, reverse to chronological
+                    const readings = [...json.data].reverse();
+                    const points: DataPoint[] = [];
+
+                    for (const r of readings) {
+                        const raw = r[dataKey];
+                        if (raw != null) {
+                            const value = typeof raw === 'string' ? parseFloat(raw) : raw;
+                            if (!isNaN(value)) {
+                                points.push({ time: new Date(r.timestamp), value });
+                            }
+                        }
+                    }
+
+                    if (points.length > 0) {
+                        setHistory(points.slice(-MAX_DATA_POINTS));
+                    }
+                }
+            } catch (err) {
+                console.warn('Could not fetch trend history:', err);
+            }
+        };
+
+        fetchHistory();
+    }, [buildingId, dataKey]);
 
     // Add new data point when value changes significantly or every 10 seconds
     useEffect(() => {
@@ -73,10 +122,25 @@ export function TrendChart24h({
         // Area fill path
         const areaPath = `${pathD} L${points[points.length - 1].x},${height - padding} L${padding},${height - padding} Z`;
 
-        return { linePath: pathD, areaPath, lastPoint: points[points.length - 1], minVal, maxVal };
+        return { linePath: pathD, areaPath, lastPoint: points[points.length - 1], points, minVal, maxVal };
     };
 
     const pathData = generateChartPath();
+
+    // Tooltip hover handlers
+    const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+        if (!pathData?.points || !svgRef.current) return;
+        const rect = svgRef.current.getBoundingClientRect();
+        const svgX = ((e.clientX - rect.left) / rect.width) * 300;
+        let closest = 0;
+        let minDist = Infinity;
+        for (let i = 0; i < pathData.points.length; i++) {
+            const d = Math.abs(pathData.points[i].x - svgX);
+            if (d < minDist) { minDist = d; closest = i; }
+        }
+        setHoverIdx(closest);
+    };
+    const handleMouseLeave = () => setHoverIdx(null);
 
     // Calculate stats
     const stats = history.length > 0 ? {
@@ -125,7 +189,7 @@ export function TrendChart24h({
                         </div>
                     </div>
                 ) : (
-                    <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 300 100">
+                    <svg ref={svgRef} className="w-full h-full overflow-visible cursor-crosshair" preserveAspectRatio="none" viewBox="0 0 300 100" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
                         {/* Grid lines */}
                         {[0, 25, 50, 75, 100].map(y => (
                             <line
@@ -178,7 +242,50 @@ export function TrendChart24h({
                                 className="animate-pulse"
                             />
                         )}
+
+                        {/* Hover indicator */}
+                        {hoverIdx !== null && pathData?.points?.[hoverIdx] && (
+                            <>
+                                <line
+                                    x1={pathData.points[hoverIdx].x}
+                                    y1={5}
+                                    x2={pathData.points[hoverIdx].x}
+                                    y2={95}
+                                    stroke={color}
+                                    strokeWidth="1"
+                                    strokeDasharray="3,3"
+                                    strokeOpacity="0.6"
+                                    vectorEffect="non-scaling-stroke"
+                                />
+                                <circle
+                                    cx={pathData.points[hoverIdx].x}
+                                    cy={pathData.points[hoverIdx].y}
+                                    r="4"
+                                    fill="white"
+                                    stroke={color}
+                                    strokeWidth="2"
+                                    vectorEffect="non-scaling-stroke"
+                                />
+                            </>
+                        )}
                     </svg>
+                )}
+
+                {/* Hover tooltip */}
+                {hoverIdx !== null && pathData?.points?.[hoverIdx] && history[hoverIdx] && (
+                    <div
+                        className="absolute pointer-events-none bg-slate-800/95 text-white text-xs rounded-lg px-3 py-2 shadow-lg border border-slate-600/50 whitespace-nowrap z-10"
+                        style={{
+                            left: `${(pathData.points[hoverIdx].x / 300) * 100}%`,
+                            top: `${(pathData.points[hoverIdx].y / 100) * 100}%`,
+                            transform: `translate(-50%, ${(pathData.points[hoverIdx].y / 100) < 0.25 ? '10%' : '-130%'})`,
+                        }}
+                    >
+                        <div className="font-bold tabular-nums">{history[hoverIdx].value.toFixed(2)} {unit}</div>
+                        <div className="text-slate-400 text-[10px]">
+                            {history[hoverIdx].time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </div>
+                    </div>
                 )}
             </div>
 

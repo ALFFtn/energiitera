@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { API_URL } from '../../config/api';
 
 interface DataPoint {
     time: Date;
@@ -17,6 +18,7 @@ interface ParameterChartProps {
     power_factor?: number;
     frequency?: number;
     temperature?: number;
+    buildingId?: string;
 }
 
 const PARAMETER_CONFIG: Record<string, { label: string; unit: string; color: string; min: number; max: number }> = {
@@ -34,10 +36,74 @@ const PARAMETER_CONFIG: Record<string, { label: string; unit: string; color: str
 
 const MAX_DATA_POINTS = 60; // Keep last 60 data points (2 minutes at 2s interval)
 
+// Map frontend parameter keys to DB column names
+const PARAM_TO_DB_COLUMN: Record<string, string> = {
+    voltage_r: 'voltageR',
+    voltage_s: 'voltageS',
+    voltage_t: 'voltageT',
+    current_r: 'currentR',
+    current_s: 'currentS',
+    current_t: 'currentT',
+    power: 'power',
+    power_factor: 'powerFactor',
+    frequency: 'frequency',
+    temperature: 'temperature',
+};
+
 export function ParameterChart(props: ParameterChartProps) {
     const [selectedParam, setSelectedParam] = useState<string>('voltage_r');
     const [history, setHistory] = useState<Record<string, DataPoint[]>>({});
     const prevValuesRef = useRef<Record<string, number>>({});
+    const initialFetchDone = useRef(false);
+    const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+    const svgRef = useRef<SVGSVGElement>(null);
+
+    // Fetch historical data from DB on mount
+    useEffect(() => {
+        if (!props.buildingId || initialFetchDone.current) return;
+        initialFetchDone.current = true;
+
+        const fetchHistory = async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                const res = await fetch(
+                    `${API_URL}/api/buildings/${props.buildingId}/readings?limit=200`,
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
+                const json = await res.json();
+                if (json.success && Array.isArray(json.data)) {
+                    // Data comes newest-first, reverse to chronological
+                    const readings = [...json.data].reverse();
+                    const allHistory: Record<string, DataPoint[]> = {};
+
+                    for (const r of readings) {
+                        const ts = new Date(r.timestamp);
+                        for (const [paramKey, dbCol] of Object.entries(PARAM_TO_DB_COLUMN)) {
+                            const raw = r[dbCol];
+                            if (raw != null) {
+                                const value = typeof raw === 'string' ? parseFloat(raw) : raw;
+                                if (!isNaN(value)) {
+                                    if (!allHistory[paramKey]) allHistory[paramKey] = [];
+                                    allHistory[paramKey].push({ time: ts, value });
+                                }
+                            }
+                        }
+                    }
+
+                    // Trim each to MAX_DATA_POINTS
+                    for (const key of Object.keys(allHistory)) {
+                        allHistory[key] = allHistory[key].slice(-MAX_DATA_POINTS);
+                    }
+
+                    setHistory(allHistory);
+                }
+            } catch (err) {
+                console.warn('Could not fetch parameter history:', err);
+            }
+        };
+
+        fetchHistory();
+    }, [props.buildingId]);
 
     // Track value changes and add to history
     useEffect(() => {
@@ -45,7 +111,8 @@ export function ParameterChart(props: ParameterChartProps) {
         const updates: Record<string, DataPoint[]> = {};
 
         Object.entries(props).forEach(([param, value]) => {
-            if (value !== undefined && value !== prevValuesRef.current[param]) {
+            if (param === 'buildingId') return; // skip non-numeric prop
+            if (value !== undefined && typeof value === 'number' && value !== prevValuesRef.current[param]) {
                 const currentHistory = history[param] || [];
                 const newHistory = [...currentHistory, { time: now, value }].slice(-MAX_DATA_POINTS);
                 updates[param] = newHistory;
@@ -98,6 +165,21 @@ export function ParameterChart(props: ParameterChartProps) {
 
     const pathData = generatePath();
 
+    // Tooltip hover handlers
+    const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+        if (!pathData?.points || !svgRef.current) return;
+        const rect = svgRef.current.getBoundingClientRect();
+        const svgX = ((e.clientX - rect.left) / rect.width) * 600;
+        let closest = 0;
+        let minDist = Infinity;
+        for (let i = 0; i < pathData.points.length; i++) {
+            const d = Math.abs(pathData.points[i].x - svgX);
+            if (d < minDist) { minDist = d; closest = i; }
+        }
+        setHoverIdx(closest);
+    };
+    const handleMouseLeave = () => setHoverIdx(null);
+
     // Format time for axis
     const formatTime = (date: Date) => {
         return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -116,7 +198,7 @@ export function ParameterChart(props: ParameterChartProps) {
                 <div className="flex flex-wrap gap-2">
                     <select
                         value={selectedParam}
-                        onChange={(e) => setSelectedParam(e.target.value)}
+                        onChange={(e) => { setSelectedParam(e.target.value); setHoverIdx(null); }}
                         className="px-4 py-2 bg-slate-800 border border-white/10 rounded-lg text-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
                     >
                         <optgroup label="Voltage">
@@ -157,7 +239,7 @@ export function ParameterChart(props: ParameterChartProps) {
             </div>
 
             {/* Chart */}
-            <div className="relative h-[320px] w-full bg-slate-900/50 rounded-xl overflow-hidden border border-white/5">
+            <div className="relative h-[320px] w-full bg-slate-900/50 rounded-xl overflow-visible border border-white/5">
                 {data.length < 2 ? (
                     <div className="absolute inset-0 flex items-center justify-center text-slate-500">
                         <div className="text-center">
@@ -167,7 +249,7 @@ export function ParameterChart(props: ParameterChartProps) {
                         </div>
                     </div>
                 ) : (
-                    <svg className="w-full h-full" viewBox="0 0 600 300" preserveAspectRatio="none">
+                    <svg ref={svgRef} className="w-full h-full cursor-crosshair" viewBox="0 0 600 300" preserveAspectRatio="none" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
                         <defs>
                             <linearGradient id={`gradient-${selectedParam}`} x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%" stopColor={config?.color} stopOpacity="0.3" />
@@ -233,7 +315,46 @@ export function ParameterChart(props: ParameterChartProps) {
                                 className="animate-pulse"
                             />
                         )}
+
+                        {/* Hover indicator */}
+                        {hoverIdx !== null && pathData?.points?.[hoverIdx] && (
+                            <>
+                                <line
+                                    x1={pathData.points[hoverIdx].x}
+                                    y1={40}
+                                    x2={pathData.points[hoverIdx].x}
+                                    y2={240}
+                                    stroke={config?.color || '#fff'}
+                                    strokeWidth="1"
+                                    strokeDasharray="4,4"
+                                    strokeOpacity="0.6"
+                                />
+                                <circle
+                                    cx={pathData.points[hoverIdx].x}
+                                    cy={pathData.points[hoverIdx].y}
+                                    r="5"
+                                    fill="white"
+                                    stroke={config?.color || '#fff'}
+                                    strokeWidth="2"
+                                />
+                            </>
+                        )}
                     </svg>
+                )}
+
+                {/* Hover tooltip */}
+                {hoverIdx !== null && pathData?.points?.[hoverIdx] && data[hoverIdx] && (
+                    <div
+                        className="absolute pointer-events-none bg-slate-900/95 text-white text-xs rounded-lg px-3 py-2 shadow-lg border border-slate-600/50 whitespace-nowrap z-10"
+                        style={{
+                            left: `${(pathData.points[hoverIdx].x / 600) * 100}%`,
+                            top: `${(pathData.points[hoverIdx].y / 300) * 100}%`,
+                            transform: `translate(-50%, ${(pathData.points[hoverIdx].y / 300) < 0.2 ? '10%' : '-130%'})`,
+                        }}
+                    >
+                        <div className="font-bold tabular-nums">{data[hoverIdx].value.toFixed(2)} {config?.unit}</div>
+                        <div className="text-slate-400 text-[10px]">{formatTime(data[hoverIdx].time)}</div>
+                    </div>
                 )}
 
                 {/* Time labels */}

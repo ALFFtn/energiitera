@@ -46,30 +46,31 @@ export function Monitoring() {
                         </nav>
 
                         {/* Page Header */}
-                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                        <div className="flex flex-col gap-4">
                             <div>
-                                <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white mb-2">
-                                    {selectedZone ? `Zone ${selectedZone} Buildings` : 'Campus Buildings'}
+                                <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight text-slate-900 dark:text-white mb-2">
+                                    {selectedZone ? `Zone ${selectedZone}` : 'Campus Buildings'}
                                 </h1>
-                                <div className="flex items-center gap-4 text-sm">
-                                    <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 font-medium border border-green-500/20">
+                                <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm">
+                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 font-medium border border-green-500/20 text-xs">
                                         <span className="size-1.5 rounded-full bg-green-500"></span>
-                                        All Systems Operational
+                                        <span className="hidden sm:inline">All Systems</span> Operational
                                     </span>
-                                    <span className="text-slate-500 dark:text-[#9ca6ba]">Last Sync: 30s ago</span>
+                                    <span className="text-slate-500 dark:text-[#9ca6ba] text-xs">Live</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <button className="flex items-center justify-center h-10 px-4 rounded-lg border border-slate-200 dark:border-[#282e39] bg-white dark:bg-[#1e232e] text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-[#282e39] font-medium text-sm transition-colors">
-                                    <span className="material-symbols-outlined mr-2 text-[20px]">download</span>
-                                    Export
+                            <div className="flex items-center gap-2 md:gap-3">
+                                {/* Mobile: Icon only buttons */}
+                                <button className="flex items-center justify-center h-9 md:h-10 px-3 md:px-4 rounded-lg border border-slate-200 dark:border-[#282e39] bg-white dark:bg-[#1e232e] text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-[#282e39] font-medium text-sm transition-colors">
+                                    <span className="material-symbols-outlined text-[18px] md:text-[20px]">download</span>
+                                    <span className="hidden sm:inline ml-2">Export</span>
                                 </button>
                                 <button
                                     onClick={() => setIsAddModalOpen(true)}
-                                    className="flex items-center justify-center h-10 px-4 rounded-lg bg-primary text-white hover:bg-blue-600 font-medium text-sm transition-colors shadow-lg shadow-primary/25"
+                                    className="flex items-center justify-center h-9 md:h-10 px-3 md:px-4 rounded-lg bg-primary text-white hover:bg-blue-600 font-medium text-sm transition-colors shadow-lg shadow-primary/25"
                                 >
-                                    <span className="material-symbols-outlined mr-2 text-[20px]">add</span>
-                                    Add Building
+                                    <span className="material-symbols-outlined text-[18px] md:text-[20px]">add</span>
+                                    <span className="hidden sm:inline ml-2">Add Building</span>
                                 </button>
                             </div>
                         </div>

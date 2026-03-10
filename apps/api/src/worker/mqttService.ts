@@ -98,9 +98,62 @@ export class MqttService extends EventEmitter {
         });
     }
 
+    /**
+     * Safely parse MQTT message payload.
+     * Handles: JSON objects, raw numbers, "nan", and other non-JSON strings.
+     */
+    private parsePayload(raw: string): unknown {
+        const trimmed = raw.trim();
+
+        // Handle known non-JSON values
+        if (trimmed === 'nan' || trimmed === 'NaN' || trimmed === 'null' || trimmed === '') {
+            return null;
+        }
+
+        try {
+            return JSON.parse(trimmed);
+        } catch {
+            // If it looks like a number, parse it
+            const num = Number(trimmed);
+            if (!isNaN(num)) {
+                return num;
+            }
+            // Return null for unparseable values
+            return null;
+        }
+    }
+
+    /**
+     * Extract the numeric value from a payload that could be:
+     *  - A raw number:  110.59
+     *  - An object:     { value: 110.59, unit: "A" }
+     */
+    private extractValue(payload: unknown): { value: number | null; unit: string } {
+        if (payload === null || payload === undefined) {
+            return { value: null, unit: '' };
+        }
+        if (typeof payload === 'number') {
+            return { value: isNaN(payload) ? null : payload, unit: '' };
+        }
+        if (typeof payload === 'object' && payload !== null) {
+            const obj = payload as Record<string, unknown>;
+            if ('value' in obj && typeof obj.value === 'number') {
+                return { value: isNaN(obj.value) ? null : obj.value, unit: (obj.unit as string) || '' };
+            }
+        }
+        return { value: null, unit: '' };
+    }
+
     private handleMessage(topic: string, message: Buffer): void {
         try {
-            const payload = JSON.parse(message.toString());
+            const raw = message.toString();
+            const payload = this.parsePayload(raw);
+
+            // Skip null/unparseable payloads
+            if (payload === null) {
+                return;
+            }
+
             const mqttMessage: MqttMessage = {
                 topic,
                 payload,
@@ -118,7 +171,10 @@ export class MqttService extends EventEmitter {
                 const sensorId = topicParts[4];
                 const parameter = topicParts[5];
 
-                console.log(`📥 ${zoneCode}/${buildingCode}/${sensorId}/${parameter}:`, payload.value || payload);
+                // Extract value (handles both raw numbers and {value, unit} objects)
+                const { value, unit } = this.extractValue(payload);
+
+                console.log(`📥 ${zoneCode}/${buildingCode}/${sensorId}/${parameter}:`, value ?? payload);
 
                 this.emit('message', {
                     ...mqttMessage,
@@ -137,15 +193,43 @@ export class MqttService extends EventEmitter {
                         data: payload,
                         timestamp: new Date()
                     });
-                } else {
-                    // Individual parameter update
+                } else if (parameter === 'data' && typeof payload === 'object') {
+                    // "data" topic contains combined readings like {L2_L3: 414.4, I1: 110.59}
+                    // Map device keys to standard parameter names
+                    const DATA_KEY_MAP: Record<string, string> = {
+                        I1: 'current_r',
+                        I2: 'current_s',
+                        I3: 'current_t',
+                        L1_N: 'voltage_r',
+                        L2_N: 'voltage_s',
+                        L3_N: 'voltage_t',
+                        Total_Active_Energy_Import: 'power',
+                    };
+                    // Fan out each key as an individual parameter
+                    const dataObj = payload as Record<string, unknown>;
+                    for (const [key, val] of Object.entries(dataObj)) {
+                        if (typeof val === 'number' && !isNaN(val)) {
+                            const mappedKey = DATA_KEY_MAP[key] || key;
+                            this.emit('parameter', {
+                                zoneCode,
+                                buildingCode,
+                                sensorId,
+                                parameter: mappedKey,
+                                value: val,
+                                unit: '',
+                                timestamp: new Date(),
+                            });
+                        }
+                    }
+                } else if (value !== null) {
+                    // Individual parameter update (only emit if value is valid)
                     this.emit('parameter', {
                         zoneCode,
                         buildingCode,
                         sensorId,
                         parameter,
-                        value: payload.value,
-                        unit: payload.unit,
+                        value,
+                        unit,
                         timestamp: new Date(),
                     });
                 }

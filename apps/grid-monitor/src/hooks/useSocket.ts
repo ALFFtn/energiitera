@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useSyncExternalStore } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { SOCKET_URL } from '../config/api';
+import { SOCKET_URL, API_URL } from '../config/api';
 
 interface SensorData {
     voltage_r?: number;
@@ -22,42 +22,61 @@ interface UseBuildingSensorOptions {
     buildingCode: string;
     zoneCode: string;
     sensorId?: string;
+    buildingId?: string;  // Used to fetch initial data from DB
+}
+
+// ── Singleton socket shared by all hooks ──────────────────────────────
+let _socket: Socket | null = null;
+let _isConnected = false;
+const _listeners = new Set<() => void>();
+
+function getSharedSocket(): Socket {
+    if (!_socket) {
+        _socket = io(SOCKET_URL, {
+            transports: ['websocket', 'polling'],
+            autoConnect: true,
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: Infinity,
+        });
+
+        _socket.on('connect', () => {
+            console.log('🔌 Socket connected:', _socket?.id);
+            _isConnected = true;
+            _listeners.forEach(l => l());
+        });
+
+        _socket.on('disconnect', () => {
+            console.log('🔌 Socket disconnected');
+            _isConnected = false;
+            _listeners.forEach(l => l());
+        });
+
+        _socket.on('connect_error', (error) => {
+            console.error('❌ Socket connection error:', error);
+        });
+    }
+    return _socket;
+}
+
+function subscribeToSocket(listener: () => void) {
+    _listeners.add(listener);
+    // Ensure socket is initialised
+    getSharedSocket();
+    return () => { _listeners.delete(listener); };
+}
+
+function getSocketSnapshot() {
+    return _isConnected;
 }
 
 export function useSocket() {
-    const socketRef = useRef<Socket | null>(null);
-    const [isConnected, setIsConnected] = useState(false);
-
-    useEffect(() => {
-        // Create socket connection
-        socketRef.current = io(SOCKET_URL, {
-            transports: ['websocket', 'polling'],
-            autoConnect: true,
-        });
-
-        socketRef.current.on('connect', () => {
-            console.log('🔌 Socket connected:', socketRef.current?.id);
-            setIsConnected(true);
-        });
-
-        socketRef.current.on('disconnect', () => {
-            console.log('🔌 Socket disconnected');
-            setIsConnected(false);
-        });
-
-        socketRef.current.on('connect_error', (error) => {
-            console.error('❌ Socket connection error:', error);
-        });
-
-        return () => {
-            socketRef.current?.disconnect();
-        };
-    }, []);
-
-    return { socket: socketRef.current, isConnected };
+    const isConnected = useSyncExternalStore(subscribeToSocket, getSocketSnapshot);
+    const socket = getSharedSocket();
+    return { socket, isConnected };
 }
 
-export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01' }: UseBuildingSensorOptions) {
+export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01', buildingId }: UseBuildingSensorOptions) {
     const { socket, isConnected } = useSocket();
     const [sensorData, setSensorData] = useState<SensorData>({
         voltage_r: 0,
@@ -75,6 +94,65 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
         thd_i: 0,
     });
     const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+    const initialFetchDone = useRef(false);
+
+    // Fetch initial data from API so the page isn't blank on load/refresh
+    useEffect(() => {
+        if (initialFetchDone.current) return;
+
+        const fetchLatest = async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                let bid = buildingId;
+
+                // If no buildingId, try to resolve from buildingCode
+                if (!bid && buildingCode) {
+                    const buildingsRes = await fetch(`${API_URL}/api/buildings?code=${encodeURIComponent(buildingCode)}`, {
+                        headers: { 'Authorization': `Bearer ${token}` },
+                    });
+                    const buildingsData = await buildingsRes.json();
+                    if (buildingsData.success && buildingsData.data) {
+                        const list = Array.isArray(buildingsData.data) ? buildingsData.data : [buildingsData.data];
+                        const match = list.find((b: { code: string }) => b.code.toLowerCase() === buildingCode.toLowerCase());
+                        if (match) bid = match.id;
+                    }
+                }
+
+                if (!bid) return;
+
+                initialFetchDone.current = true;
+
+                const res = await fetch(`${API_URL}/api/buildings/${bid}/readings/latest`, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+                const json = await res.json();
+                if (json.success && json.data) {
+                    const r = json.data;
+                    setSensorData(prev => ({
+                        ...prev,
+                        voltage_r: r.voltageR ? parseFloat(r.voltageR) : prev.voltage_r,
+                        voltage_s: r.voltageS ? parseFloat(r.voltageS) : prev.voltage_s,
+                        voltage_t: r.voltageT ? parseFloat(r.voltageT) : prev.voltage_t,
+                        current_r: r.currentR ? parseFloat(r.currentR) : prev.current_r,
+                        current_s: r.currentS ? parseFloat(r.currentS) : prev.current_s,
+                        current_t: r.currentT ? parseFloat(r.currentT) : prev.current_t,
+                        power: r.power ? parseFloat(r.power) : prev.power,
+                        power_factor: r.powerFactor ? parseFloat(r.powerFactor) : prev.power_factor,
+                        frequency: r.frequency ? parseFloat(r.frequency) : prev.frequency,
+                        temperature: r.temperature ? parseFloat(r.temperature) : prev.temperature,
+                        energy: r.energy ? parseFloat(r.energy) : prev.energy,
+                        thd_v: r.thdVoltage ? parseFloat(r.thdVoltage) : prev.thd_v,
+                        thd_i: r.thdCurrent ? parseFloat(r.thdCurrent) : prev.thd_i,
+                    }));
+                    setLastUpdate(new Date(r.timestamp));
+                }
+            } catch (err) {
+                console.warn('Could not fetch initial sensor data:', err);
+            }
+        };
+
+        fetchLatest();
+    }, [buildingCode, buildingId]);
 
     const handleParameterUpdate = useCallback((data: {
         zoneCode: string;
@@ -169,6 +247,48 @@ export function useAllBuildingsSensor() {
     const [buildingsData, setBuildingsData] = useState<Map<string, BuildingSensorSummary>>(new Map());
     const [totalPower, setTotalPower] = useState(0);
     const [avgPowerFactor, setAvgPowerFactor] = useState(0);
+    const initialFetchDone = useRef(false);
+
+    // Fetch initial data from API so cards aren't blank on refresh
+    useEffect(() => {
+        if (initialFetchDone.current) return;
+        initialFetchDone.current = true;
+
+        const fetchLatest = async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                const res = await fetch(`${API_URL}/api/buildings-latest-readings`, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+                const json = await res.json();
+                if (json.success && Array.isArray(json.data)) {
+                    setBuildingsData(prev => {
+                        const newMap = new Map(prev);
+                        for (const item of json.data) {
+                            const key = item.buildingCode.toUpperCase();
+                            const r = item.reading;
+                            newMap.set(key, {
+                                buildingCode: key,
+                                power: r.power ? parseFloat(r.power) : 0,
+                                powerFactor: r.powerFactor ? parseFloat(r.powerFactor) : 0.95,
+                                voltage: r.voltageR ? parseFloat(r.voltageR) : 220,
+                                current: (r.currentR ? parseFloat(r.currentR) : 0)
+                                       + (r.currentS ? parseFloat(r.currentS) : 0)
+                                       + (r.currentT ? parseFloat(r.currentT) : 0),
+                                status: 'online' as const,
+                                lastUpdate: new Date(r.timestamp),
+                            });
+                        }
+                        return newMap;
+                    });
+                }
+            } catch (err) {
+                console.warn('Could not fetch initial buildings data:', err);
+            }
+        };
+
+        fetchLatest();
+    }, []);
 
     useEffect(() => {
         if (!socket) return;
