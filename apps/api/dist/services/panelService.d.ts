@@ -1,0 +1,213 @@
+import { type NewPanel, type NewPanelEvent, type NewAlertThreshold } from '../db/schema/index.js';
+export declare class PanelService {
+    getPanelsByBuilding(buildingId: string): Promise<{
+        code: string;
+        status: string;
+        description: string | null;
+        id: string;
+        name: string;
+        createdAt: Date;
+        location: string | null;
+        buildingId: string;
+        maintenanceMode: boolean;
+        uptimeSeconds: number;
+        startedAt: Date | null;
+    }[]>;
+    getPanelById(id: string): Promise<{
+        latestReading: {
+            id: string;
+            panelId: string;
+            timestamp: Date;
+            voltageLn: string | null;
+            voltageLnMin: string | null;
+            voltageLnMax: string | null;
+            currentTotal: string | null;
+            currentPhaseA: string | null;
+            currentPhaseB: string | null;
+            currentPhaseC: string | null;
+            powerFactor: string | null;
+            frequency: string | null;
+            powerKw: string | null;
+            energyKwh: string | null;
+            signalQuality: number | null;
+            thdPercentage: string | null;
+        } | undefined;
+        code: string;
+        status: string;
+        description: string | null;
+        id: string;
+        name: string;
+        createdAt: Date;
+        location: string | null;
+        buildingId: string;
+        maintenanceMode: boolean;
+        uptimeSeconds: number;
+        startedAt: Date | null;
+        building: {
+            code: string;
+            status: string;
+            description: string | null;
+            id: string;
+            name: string;
+            createdAt: Date;
+            zoneId: string;
+            gridConnection: string;
+            lastSyncAt: Date | null;
+            mapCoordinates: unknown;
+            zone: {
+                code: string;
+                status: string;
+                id: string;
+                name: string;
+                createdAt: Date;
+                campusId: string;
+            };
+        };
+        thresholds: {
+            id: string;
+            panelId: string;
+            metric: string;
+            minWarning: string | null;
+            maxWarning: string | null;
+            minCritical: string | null;
+            maxCritical: string | null;
+        }[];
+    }>;
+    updatePanel(id: string, data: Partial<NewPanel>): Promise<{
+        id: string;
+        buildingId: string;
+        code: string;
+        name: string;
+        description: string | null;
+        location: string | null;
+        status: string;
+        maintenanceMode: boolean;
+        uptimeSeconds: number;
+        startedAt: Date | null;
+        createdAt: Date;
+    }>;
+    toggleMaintenanceMode(id: string, enabled: boolean): Promise<{
+        id: string;
+        buildingId: string;
+        code: string;
+        name: string;
+        description: string | null;
+        location: string | null;
+        status: string;
+        maintenanceMode: boolean;
+        uptimeSeconds: number;
+        startedAt: Date | null;
+        createdAt: Date;
+    }>;
+    getReadings(panelId: string, options?: {
+        from?: Date;
+        to?: Date;
+        limit?: number;
+    }): Promise<{
+        id: string;
+        panelId: string;
+        timestamp: Date;
+        voltageLn: string | null;
+        voltageLnMin: string | null;
+        voltageLnMax: string | null;
+        currentTotal: string | null;
+        currentPhaseA: string | null;
+        currentPhaseB: string | null;
+        currentPhaseC: string | null;
+        powerFactor: string | null;
+        frequency: string | null;
+        powerKw: string | null;
+        energyKwh: string | null;
+        signalQuality: number | null;
+        thdPercentage: string | null;
+    }[]>;
+    getLatestReadings(panelId: string): Promise<{
+        id: string;
+        panelId: string;
+        timestamp: Date;
+        voltageLn: string | null;
+        voltageLnMin: string | null;
+        voltageLnMax: string | null;
+        currentTotal: string | null;
+        currentPhaseA: string | null;
+        currentPhaseB: string | null;
+        currentPhaseC: string | null;
+        powerFactor: string | null;
+        frequency: string | null;
+        powerKw: string | null;
+        energyKwh: string | null;
+        signalQuality: number | null;
+        thdPercentage: string | null;
+    } | undefined>;
+    getEvents(panelId: string, limit?: number): Promise<{
+        type: string;
+        description: string | null;
+        id: string;
+        createdAt: Date;
+        userId: string | null;
+        panelId: string;
+        severity: string;
+        title: string;
+    }[]>;
+    createEvent(data: NewPanelEvent): Promise<{
+        type: string;
+        description: string | null;
+        id: string;
+        createdAt: Date;
+        userId: string | null;
+        panelId: string;
+        severity: string;
+        title: string;
+    }>;
+    getThresholds(panelId: string): Promise<{
+        id: string;
+        panelId: string;
+        metric: string;
+        minWarning: string | null;
+        maxWarning: string | null;
+        minCritical: string | null;
+        maxCritical: string | null;
+    }[]>;
+    setThreshold(panelId: string, data: Omit<NewAlertThreshold, 'panelId'>): Promise<{
+        id: string;
+        panelId: string;
+        metric: string;
+        minWarning: string | null;
+        maxWarning: string | null;
+        minCritical: string | null;
+        maxCritical: string | null;
+    }>;
+    getAllPanelsWithReadings(buildingId?: string): Promise<{
+        latestReading: {
+            id: string;
+            panelId: string;
+            timestamp: Date;
+            voltageLn: string | null;
+            voltageLnMin: string | null;
+            voltageLnMax: string | null;
+            currentTotal: string | null;
+            currentPhaseA: string | null;
+            currentPhaseB: string | null;
+            currentPhaseC: string | null;
+            powerFactor: string | null;
+            frequency: string | null;
+            powerKw: string | null;
+            energyKwh: string | null;
+            signalQuality: number | null;
+            thdPercentage: string | null;
+        } | undefined;
+        code: string;
+        status: string;
+        description: string | null;
+        id: string;
+        name: string;
+        createdAt: Date;
+        location: string | null;
+        buildingId: string;
+        maintenanceMode: boolean;
+        uptimeSeconds: number;
+        startedAt: Date | null;
+    }[]>;
+}
+export declare const panelService: PanelService;
+//# sourceMappingURL=panelService.d.ts.map

@@ -8,7 +8,11 @@ export class BuildingService {
     async getAllCampuses() {
         return db.query.campuses.findMany({
             with: {
-                zones: true,
+                zones: {
+                    with: {
+                        buildings: true,
+                    },
+                },
             },
         });
     }

@@ -25,5 +25,28 @@ export const api = {
         buildings: `${API_URL}/api/buildings`,
         campuses: `${API_URL}/api/campuses`,
         zones: `${API_URL}/api/zones`,
+        grid: {
+            ticker: `${API_URL}/api/grid/ticker`,
+            powerDistribution: `${API_URL}/api/grid/power-distribution`,
+        },
+        analytics: {
+            kpis: `${API_URL}/api/analytics/kpis`,
+            departmentBreakdown: `${API_URL}/api/analytics/department-breakdown`,
+            hourlyTrend: `${API_URL}/api/analytics/hourly-trend`,
+        },
+        alerts: {
+            list: `${API_URL}/api/alerts`,
+            active: `${API_URL}/api/alerts/active`,
+            counts: `${API_URL}/api/alerts/counts`,
+        },
+        weather: {
+            current: `${API_URL}/api/weather/current`,
+        },
     },
 };
+
+// Helper to get auth headers
+export function getAuthHeaders(): Record<string, string> {
+    const token = localStorage.getItem('accessToken');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+}

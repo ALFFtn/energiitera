@@ -13,6 +13,7 @@ import panelsRoutes from './routes/panels.routes';
 import alertsRoutes from './routes/alerts.routes';
 import readingsRoutes from './routes/readings.routes';
 import analyticsRoutes from './routes/analytics.routes';
+import weatherRoutes from './routes/weather.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -54,6 +55,7 @@ app.use('/api', panelsRoutes);      // Includes /panels
 app.use('/api/alerts', alertsRoutes);
 app.use('/api', readingsRoutes);    // Includes /readings, /grid
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/weather', weatherRoutes);
 
 // Error handling
 app.use(notFound);

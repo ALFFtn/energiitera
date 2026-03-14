@@ -36,7 +36,6 @@ const DEFAULT_PARAMETERS: Omit<SensorParameter, 'mqttTopic'>[] = [
 export function ConfigureSensorModal({
     isOpen,
     onClose,
-    buildingId,
     buildingCode,
     buildingName,
     zoneCode

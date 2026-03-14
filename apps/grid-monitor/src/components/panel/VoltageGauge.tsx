@@ -7,8 +7,6 @@ interface VoltageGaugeProps {
 
 export function VoltageGauge({ phaseR = 230, phaseS = 230, phaseT = 230 }: VoltageGaugeProps) {
     const avgVoltage = Math.round((phaseR + phaseS + phaseT) / 3);
-    const minVoltage = Math.min(phaseR, phaseS, phaseT);
-    const maxVoltage = Math.max(phaseR, phaseS, phaseT);
 
     // Calculate progress (voltage typically 200-250V, show as percentage)
     const minRange = 200;
