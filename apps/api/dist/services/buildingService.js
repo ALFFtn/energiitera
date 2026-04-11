@@ -113,16 +113,14 @@ class BuildingService {
     }
     // Create new building with auto-generated MQTT topic
     async createBuilding(data) {
-        // Verify zone exists and get zone code
-        const zone = await database_js_1.db.query.zones.findFirst({
-            where: (0, drizzle_orm_1.eq)(index_js_1.zones.id, data.zoneId),
-            with: {
-                campus: true,
-            },
-        });
-        if (!zone) {
+        // Verify zone exists
+        const zoneList = await database_js_1.db.select().from(index_js_1.zones).where((0, drizzle_orm_1.eq)(index_js_1.zones.id, data.zoneId));
+        if (!zoneList[0]) {
             throw new errorHandler_js_1.AppError('Zone not found', 404);
         }
+        const zone = zoneList[0];
+        // Get campus if zone exists
+        const [campus] = await database_js_1.db.select().from(index_js_1.campuses).where((0, drizzle_orm_1.eq)(index_js_1.campuses.id, zone.campusId));
         // Create building
         const result = await database_js_1.db.insert(index_js_1.buildings).values({
             zoneId: data.zoneId,
@@ -135,7 +133,10 @@ class BuildingService {
         const [newBuilding] = await database_js_1.db.select().from(index_js_1.buildings).where((0, drizzle_orm_1.eq)(index_js_1.buildings.id, result[0].id));
         return {
             ...newBuilding,
-            zone,
+            zone: {
+                ...zone,
+                campus,
+            },
         };
     }
     // Delete building

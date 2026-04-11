@@ -15,16 +15,7 @@ class AlertService {
         if (severity) {
             conditions.push((0, drizzle_orm_1.eq)(index_js_1.alerts.severity, severity));
         }
-        const alertsList = await database_js_1.db.query.alerts.findMany({
-            where: conditions.length > 0 ? (0, drizzle_orm_1.and)(...conditions) : undefined,
-            orderBy: [(0, drizzle_orm_1.desc)(index_js_1.alerts.triggeredAt)],
-            limit,
-            with: {
-                panel: true,
-                building: true,
-                acknowledgedByUser: true,
-            },
-        });
+        const alertsList = await database_js_1.db.select().from(index_js_1.alerts).where(conditions.length > 0 ? (0, drizzle_orm_1.and)(...conditions) : undefined).orderBy((0, drizzle_orm_1.desc)(index_js_1.alerts.triggeredAt)).limit(limit);
         return alertsList;
     }
     async getActiveAlerts() {
@@ -45,18 +36,11 @@ class AlertService {
         }, {});
     }
     async getAlertById(id) {
-        const alert = await database_js_1.db.query.alerts.findFirst({
-            where: (0, drizzle_orm_1.eq)(index_js_1.alerts.id, id),
-            with: {
-                panel: true,
-                building: true,
-                acknowledgedByUser: true,
-            },
-        });
-        if (!alert) {
+        const alert = await database_js_1.db.select().from(index_js_1.alerts).where((0, drizzle_orm_1.eq)(index_js_1.alerts.id, id));
+        if (!alert[0]) {
             throw new errorHandler_js_1.AppError('Alert not found', 404);
         }
-        return alert;
+        return alert[0];
     }
     async createAlert(data) {
         const result = await database_js_1.db.insert(index_js_1.alerts).values(data).$returningId();

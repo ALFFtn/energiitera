@@ -11,12 +11,6 @@ export declare class AnalyticsService {
         departmentId: string;
         consumptionKwh: string;
         costUsd: string | null;
-        department: {
-            id: string;
-            name: string;
-            campusId: string;
-            color: string | null;
-        };
     }[]>;
     getKPIs(campusId: string, dateRange?: {
         from: Date;

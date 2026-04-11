@@ -31,7 +31,7 @@ export declare class PanelService {
             energyKwh: string | null;
             signalQuality: number | null;
             thdPercentage: string | null;
-        } | undefined;
+        };
         code: string;
         status: string;
         description: string | null;
@@ -43,35 +43,6 @@ export declare class PanelService {
         maintenanceMode: boolean;
         uptimeSeconds: number;
         startedAt: Date | null;
-        building: {
-            code: string;
-            status: string;
-            description: string | null;
-            id: string;
-            name: string;
-            createdAt: Date;
-            zoneId: string;
-            gridConnection: string;
-            lastSyncAt: Date | null;
-            mapCoordinates: unknown;
-            zone: {
-                code: string;
-                status: string;
-                id: string;
-                name: string;
-                createdAt: Date;
-                campusId: string;
-            };
-        };
-        thresholds: {
-            id: string;
-            panelId: string;
-            metric: string;
-            minWarning: string | null;
-            maxWarning: string | null;
-            minCritical: string | null;
-            maxCritical: string | null;
-        }[];
     }>;
     updatePanel(id: string, data: Partial<NewPanel>): Promise<{
         code: string;

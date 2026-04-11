@@ -21,13 +21,7 @@ class AnalyticsService {
         if (buildingId) {
             conditions.push((0, drizzle_orm_1.eq)(index_js_1.consumptionRecords.buildingId, buildingId));
         }
-        const records = await database_js_1.db.query.consumptionRecords.findMany({
-            where: conditions.length > 0 ? (0, drizzle_orm_1.and)(...conditions) : undefined,
-            orderBy: [(0, drizzle_orm_1.desc)(index_js_1.consumptionRecords.timestamp)],
-            with: {
-                department: true,
-            },
-        });
+        const records = await database_js_1.db.select().from(index_js_1.consumptionRecords).where(conditions.length > 0 ? (0, drizzle_orm_1.and)(...conditions) : undefined).orderBy((0, drizzle_orm_1.desc)(index_js_1.consumptionRecords.timestamp));
         return records;
     }
     // Get KPI summary

@@ -188,12 +188,6 @@ export declare class BuildingService {
         mapCoordinates?: object;
     }): Promise<{
         zone: {
-            code: string;
-            status: string;
-            id: string;
-            name: string;
-            createdAt: Date;
-            campusId: string;
             campus: {
                 id: string;
                 name: string;
@@ -201,6 +195,12 @@ export declare class BuildingService {
                 location: string | null;
                 timezone: string;
             };
+            code: string;
+            status: string;
+            id: string;
+            name: string;
+            createdAt: Date;
+            campusId: string;
         };
         code: string;
         status: string;

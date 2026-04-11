@@ -20,9 +20,10 @@ async function saveSensorReading(buildingCode, sensorId, data) {
             where: (0, drizzle_orm_1.eq)(schema_1.buildings.code, buildingCode.toUpperCase()),
         });
         if (!building) {
-            console.log(`Warning: Building not found: ${buildingCode}`);
+            console.warn(`⚠️  Building not found: ${buildingCode}`);
             return;
         }
+        console.log(`✅ Found building: ${buildingCode} (id: ${building.id.substring(0, 8)}...)`);
         // Buffer the reading (only keep latest per building+sensor)
         const key = `${building.id}-${sensorId}`;
         readingsBuffer.set(key, {
@@ -31,9 +32,10 @@ async function saveSensorReading(buildingCode, sensorId, data) {
             data,
             timestamp: new Date(),
         });
+        console.log(`📝 Buffered reading for ${buildingCode}/${sensorId}, buffer size: ${readingsBuffer.size}`);
     }
     catch (error) {
-        console.error('Error buffering sensor reading:', error);
+        console.error(`❌ Error buffering sensor reading for ${buildingCode}/${sensorId}:`, error);
     }
 }
 // Flush buffered readings to database (call periodically)
@@ -44,29 +46,36 @@ async function flushSensorReadings() {
     readingsBuffer.clear();
     try {
         // Insert all buffered readings
-        await database_1.db.insert(schema_1.buildingSensorReadings).values(readings.map(r => ({
+        const valuesToInsert = readings.map(r => ({
             buildingId: r.buildingId,
             sensorId: r.sensorId,
             timestamp: r.timestamp,
-            voltageR: r.data.voltage_r?.toString(),
-            voltageS: r.data.voltage_s?.toString(),
-            voltageT: r.data.voltage_t?.toString(),
-            currentR: r.data.current_r?.toString(),
-            currentS: r.data.current_s?.toString(),
-            currentT: r.data.current_t?.toString(),
-            power: r.data.power?.toString(),
-            powerFactor: r.data.power_factor?.toString(),
-            frequency: r.data.frequency?.toString(),
-            temperature: r.data.temperature?.toString(),
-            energy: r.data.energy?.toString(),
-            thdVoltage: r.data.thd_v?.toString(),
-            thdCurrent: r.data.thd_i?.toString(),
-        })));
-        console.log(`Saved ${readings.length} sensor readings to database`);
+            voltageR: r.data.voltage_r != null ? String(r.data.voltage_r) : undefined,
+            voltageS: r.data.voltage_s != null ? String(r.data.voltage_s) : undefined,
+            voltageT: r.data.voltage_t != null ? String(r.data.voltage_t) : undefined,
+            currentR: r.data.current_r != null ? String(r.data.current_r) : undefined,
+            currentS: r.data.current_s != null ? String(r.data.current_s) : undefined,
+            currentT: r.data.current_t != null ? String(r.data.current_t) : undefined,
+            power: r.data.power != null ? String(r.data.power) : undefined,
+            powerFactor: r.data.power_factor != null ? String(r.data.power_factor) : undefined,
+            frequency: r.data.frequency != null ? String(r.data.frequency) : undefined,
+            temperature: r.data.temperature != null ? String(r.data.temperature) : undefined,
+            energy: r.data.energy != null ? String(r.data.energy) : undefined,
+            thdVoltage: r.data.thd_v != null ? String(r.data.thd_v) : undefined,
+            thdCurrent: r.data.thd_i != null ? String(r.data.thd_i) : undefined,
+        }));
+        console.log(`💾 Flushing ${readings.length} sensor readings to database:`, valuesToInsert.slice(0, 1).map(v => ({ buildingId: v.buildingId, sensorId: v.sensorId, voltageR: v.voltageR, currentR: v.currentR })));
+        await database_1.db.insert(schema_1.buildingSensorReadings).values(valuesToInsert);
+        console.log(`✅ Saved ${readings.length} sensor readings to database`);
         return readings.length;
     }
     catch (error) {
-        console.error('Error flushing sensor readings:', error);
+        console.error('❌ Error flushing sensor readings:', error);
+        // Re-add failed readings back to buffer for retry
+        readings.forEach(r => {
+            const key = `${r.buildingId}-${r.sensorId}`;
+            readingsBuffer.set(key, r);
+        });
         return 0;
     }
 }

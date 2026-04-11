@@ -16,41 +16,6 @@ export declare class AlertService {
         resolvedAt: Date | null;
         acknowledgedBy: string | null;
         acknowledgedAt: Date | null;
-        building: {
-            code: string;
-            status: string;
-            description: string | null;
-            id: string;
-            name: string;
-            createdAt: Date;
-            zoneId: string;
-            gridConnection: string;
-            lastSyncAt: Date | null;
-            mapCoordinates: unknown;
-        } | null;
-        panel: {
-            code: string;
-            status: string;
-            description: string | null;
-            id: string;
-            name: string;
-            createdAt: Date;
-            location: string | null;
-            buildingId: string;
-            maintenanceMode: boolean;
-            uptimeSeconds: number;
-            startedAt: Date | null;
-        } | null;
-        acknowledgedByUser: {
-            id: string;
-            name: string;
-            email: string;
-            passwordHash: string;
-            role: string;
-            avatarUrl: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        } | null;
     }[]>;
     getActiveAlerts(): Promise<{
         message: string | null;
@@ -64,41 +29,6 @@ export declare class AlertService {
         resolvedAt: Date | null;
         acknowledgedBy: string | null;
         acknowledgedAt: Date | null;
-        building: {
-            code: string;
-            status: string;
-            description: string | null;
-            id: string;
-            name: string;
-            createdAt: Date;
-            zoneId: string;
-            gridConnection: string;
-            lastSyncAt: Date | null;
-            mapCoordinates: unknown;
-        } | null;
-        panel: {
-            code: string;
-            status: string;
-            description: string | null;
-            id: string;
-            name: string;
-            createdAt: Date;
-            location: string | null;
-            buildingId: string;
-            maintenanceMode: boolean;
-            uptimeSeconds: number;
-            startedAt: Date | null;
-        } | null;
-        acknowledgedByUser: {
-            id: string;
-            name: string;
-            email: string;
-            passwordHash: string;
-            role: string;
-            avatarUrl: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        } | null;
     }[]>;
     getAlertCounts(): Promise<Record<string, number>>;
     getAlertById(id: string): Promise<{
@@ -113,41 +43,6 @@ export declare class AlertService {
         resolvedAt: Date | null;
         acknowledgedBy: string | null;
         acknowledgedAt: Date | null;
-        building: {
-            code: string;
-            status: string;
-            description: string | null;
-            id: string;
-            name: string;
-            createdAt: Date;
-            zoneId: string;
-            gridConnection: string;
-            lastSyncAt: Date | null;
-            mapCoordinates: unknown;
-        } | null;
-        panel: {
-            code: string;
-            status: string;
-            description: string | null;
-            id: string;
-            name: string;
-            createdAt: Date;
-            location: string | null;
-            buildingId: string;
-            maintenanceMode: boolean;
-            uptimeSeconds: number;
-            startedAt: Date | null;
-        } | null;
-        acknowledgedByUser: {
-            id: string;
-            name: string;
-            email: string;
-            passwordHash: string;
-            role: string;
-            avatarUrl: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        } | null;
     }>;
     createAlert(data: NewAlert): Promise<{
         message: string | null;

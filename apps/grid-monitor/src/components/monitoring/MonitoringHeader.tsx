@@ -9,9 +9,9 @@ export function MonitoringHeader() {
     const isActive = (path: string) => location.pathname === path;
 
     const navLinks = [
-        { path: '/', label: 'Dashboard' },
+        // { path: '/', label: 'Dashboard' },
         { path: '/monitoring', label: 'Buildings' },
-        { path: '/analytics', label: 'Analytics' },
+        // { path: '/analytics', label: 'Analytics' },
     ];
 
     return (

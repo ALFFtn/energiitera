@@ -11,9 +11,9 @@ export function CommandHeader() {
     const isActive = (path: string) => location.pathname === path;
 
     const navLinks = [
-        { path: '/', label: 'Dashboard', icon: 'dashboard' },
+        // { path: '/', label: 'Dashboard', icon: 'dashboard' },
         { path: '/monitoring', label: 'Buildings', icon: 'apartment' },
-        { path: '/analytics', label: 'Analytics', icon: 'analytics' },
+        // { path: '/analytics', label: 'Analytics', icon: 'analytics' },
     ];
 
     return (

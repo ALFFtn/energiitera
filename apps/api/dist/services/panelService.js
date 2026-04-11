@@ -12,28 +12,16 @@ class PanelService {
         });
     }
     async getPanelById(id) {
-        const panel = await database_js_1.db.query.panels.findFirst({
-            where: (0, drizzle_orm_1.eq)(index_js_1.panels.id, id),
-            with: {
-                building: {
-                    with: {
-                        zone: true,
-                    },
-                },
-                thresholds: true,
-            },
-        });
-        if (!panel) {
+        const panelList = await database_js_1.db.select().from(index_js_1.panels).where((0, drizzle_orm_1.eq)(index_js_1.panels.id, id));
+        if (!panelList[0]) {
             throw new errorHandler_js_1.AppError('Panel not found', 404);
         }
+        const panel = panelList[0];
         // Get latest reading
-        const latestReading = await database_js_1.db.query.panelReadings.findFirst({
-            where: (0, drizzle_orm_1.eq)(index_js_1.panelReadings.panelId, id),
-            orderBy: [(0, drizzle_orm_1.desc)(index_js_1.panelReadings.timestamp)],
-        });
+        const latestReadingList = await database_js_1.db.select().from(index_js_1.panelReadings).where((0, drizzle_orm_1.eq)(index_js_1.panelReadings.panelId, id)).orderBy((0, drizzle_orm_1.desc)(index_js_1.panelReadings.timestamp)).limit(1);
         return {
             ...panel,
-            latestReading,
+            latestReading: latestReadingList[0] || null,
         };
     }
     async updatePanel(id, data) {

@@ -84,10 +84,12 @@ class Worker {
             // Broadcast to Socket.io clients
             socketService_1.socketService.broadcastBuildingSensor(zoneCode, buildingCode, sensorId, parameter, value, unit);
             // Buffer data for database storage
-            const key = `${buildingCode}-${sensorId}`;
+            // Use :: as delimiter since building codes and sensor IDs can contain dashes
+            const key = `${buildingCode}::${sensorId}`;
             const existing = this.sensorBuffer.get(key) || {};
             existing[parameter] = value;
             this.sensorBuffer.set(key, existing);
+            console.log(`📊 Buffered ${buildingCode}/${sensorId}: ${parameter}=${value}${unit ? ' ' + unit : ''} (buffer size: ${this.sensorBuffer.size})`);
         });
         this.mqttService.on('error', (error) => {
             console.error('❌ MQTT Worker error:', error);
@@ -96,17 +98,26 @@ class Worker {
         this.batchWriter.start();
         // Start sensor data flush interval (every 10 seconds)
         this.flushInterval = setInterval(async () => {
-            // Save buffered sensor data to database
-            for (const [key, data] of this.sensorBuffer.entries()) {
-                // Key format: buildingCode-sensorId (sensorId may contain dashes)
-                const dashIdx = key.indexOf('-');
-                const buildingCode = key.substring(0, dashIdx);
-                const sensorId = key.substring(dashIdx + 1);
-                await (0, sensorReadingService_1.saveSensorReading)(buildingCode, sensorId, data);
+            console.log(`\n⏱️  Sensor flush interval started. Buffer size: ${this.sensorBuffer.size}`);
+            if (this.sensorBuffer.size > 0) {
+                // Save buffered sensor data to database
+                for (const [key, data] of this.sensorBuffer.entries()) {
+                    // Key format: buildingCode::sensorId (using :: delimiter safe for codes with dashes)
+                    const [buildingCode, sensorId] = key.split('::');
+                    if (!buildingCode || !sensorId) {
+                        console.warn(`⚠️  Invalid key format: ${key}`);
+                        continue;
+                    }
+                    console.log(`📤 Saving ${buildingCode}/${sensorId} data:`, Object.keys(data).slice(0, 5));
+                    await (0, sensorReadingService_1.saveSensorReading)(buildingCode, sensorId, data);
+                }
+                this.sensorBuffer.clear();
             }
-            this.sensorBuffer.clear();
             // Flush to database
-            await (0, sensorReadingService_1.flushSensorReadings)();
+            const flushed = await (0, sensorReadingService_1.flushSensorReadings)();
+            if (flushed > 0) {
+                console.log(`\n✅ Flush complete: ${flushed} readings saved to database\n`);
+            }
         }, 10000);
         // Connect to MQTT broker
         try {
