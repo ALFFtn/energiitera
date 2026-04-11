@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const drizzle_orm_1 = require("drizzle-orm");
 const database_js_1 = require("../config/database.js");
 const index_js_1 = require("../db/schema/index.js");
 async function seed() {
@@ -23,27 +24,32 @@ async function seed() {
     // Create admin user
     console.log('Creating users...');
     const passwordHash = await bcryptjs_1.default.hash('password', 12);
-    const [adminUser] = await database_js_1.db.insert(index_js_1.users).values({
+    const adminResult = await database_js_1.db.insert(index_js_1.users).values({
         email: 'admin@gridmonitor.iot',
         passwordHash,
         name: 'Admin User',
         role: 'admin',
-    }).returning();
+    }).$returningId();
+    const [adminUser] = await database_js_1.db.select().from(index_js_1.users).where((0, drizzle_orm_1.eq)(index_js_1.users.id, adminResult[0].id));
     await database_js_1.db.insert(index_js_1.users).values([
         { email: 'engineer@gridmonitor.iot', passwordHash, name: 'John Engineer', role: 'engineer' },
         { email: 'operator@gridmonitor.iot', passwordHash, name: 'Jane Operator', role: 'operator' },
     ]);
     // Create campus
     console.log('Creating campus and zones...');
-    const [mainCampus] = await database_js_1.db.insert(index_js_1.campuses).values({
+    const campusResult = await database_js_1.db.insert(index_js_1.campuses).values({
         name: 'Main Campus',
         location: 'Austin, TX',
         timezone: 'America/Chicago',
-    }).returning();
+    }).$returningId();
+    const [mainCampus] = await database_js_1.db.select().from(index_js_1.campuses).where((0, drizzle_orm_1.eq)(index_js_1.campuses.id, campusResult[0].id));
     // Create zones
-    const [zoneA] = await database_js_1.db.insert(index_js_1.zones).values({ campusId: mainCampus.id, code: 'A', name: 'Research', status: 'normal' }).returning();
-    const [zoneB] = await database_js_1.db.insert(index_js_1.zones).values({ campusId: mainCampus.id, code: 'B', name: 'Admin', status: 'warning' }).returning();
-    const [zoneC] = await database_js_1.db.insert(index_js_1.zones).values({ campusId: mainCampus.id, code: 'C', name: 'Dorms', status: 'normal' }).returning();
+    const zoneAResult = await database_js_1.db.insert(index_js_1.zones).values({ campusId: mainCampus.id, code: 'A', name: 'Research', status: 'normal' }).$returningId();
+    const [zoneA] = await database_js_1.db.select().from(index_js_1.zones).where((0, drizzle_orm_1.eq)(index_js_1.zones.id, zoneAResult[0].id));
+    const zoneBResult = await database_js_1.db.insert(index_js_1.zones).values({ campusId: mainCampus.id, code: 'B', name: 'Admin', status: 'warning' }).$returningId();
+    const [zoneB] = await database_js_1.db.select().from(index_js_1.zones).where((0, drizzle_orm_1.eq)(index_js_1.zones.id, zoneBResult[0].id));
+    const zoneCResult = await database_js_1.db.insert(index_js_1.zones).values({ campusId: mainCampus.id, code: 'C', name: 'Dorms', status: 'normal' }).$returningId();
+    const [zoneC] = await database_js_1.db.select().from(index_js_1.zones).where((0, drizzle_orm_1.eq)(index_js_1.zones.id, zoneCResult[0].id));
     // Create departments
     console.log('Creating departments...');
     await database_js_1.db.insert(index_js_1.departments).values([
@@ -54,7 +60,7 @@ async function seed() {
     ]);
     // Create buildings
     console.log('Creating buildings...');
-    const [engQuad] = await database_js_1.db.insert(index_js_1.buildings).values({
+    const engQuadResult = await database_js_1.db.insert(index_js_1.buildings).values({
         zoneId: zoneA.id,
         code: 'ENG',
         name: 'Engineering Quad',
@@ -62,46 +68,52 @@ async function seed() {
         status: 'operational',
         gridConnection: 'primary',
         mapCoordinates: { x: 100, y: 200, width: 100, height: 100 },
-    }).returning();
-    const [adminHall] = await database_js_1.db.insert(index_js_1.buildings).values({
+    }).$returningId();
+    const [engQuad] = await database_js_1.db.select().from(index_js_1.buildings).where((0, drizzle_orm_1.eq)(index_js_1.buildings.id, engQuadResult[0].id));
+    const adminHallResult = await database_js_1.db.insert(index_js_1.buildings).values({
         zoneId: zoneB.id,
         code: 'ADM',
         name: 'Admin Hall',
         description: 'Administrative offices',
         status: 'operational',
         mapCoordinates: { x: 280, y: 100, width: 120, height: 80 },
-    }).returning();
-    const [dorms] = await database_js_1.db.insert(index_js_1.buildings).values({
+    }).$returningId();
+    const [adminHall] = await database_js_1.db.select().from(index_js_1.buildings).where((0, drizzle_orm_1.eq)(index_js_1.buildings.id, adminHallResult[0].id));
+    const dormsResult = await database_js_1.db.insert(index_js_1.buildings).values({
         zoneId: zoneC.id,
         code: 'DRM',
         name: 'Dorms West',
         description: 'Western dormitory complex',
         status: 'warning',
         mapCoordinates: { x: 280, y: 320, width: 170, height: 100 },
-    }).returning();
-    const [scienceLabs] = await database_js_1.db.insert(index_js_1.buildings).values({
+    }).$returningId();
+    const [dorms] = await database_js_1.db.select().from(index_js_1.buildings).where((0, drizzle_orm_1.eq)(index_js_1.buildings.id, dormsResult[0].id));
+    const scienceLabsResult = await database_js_1.db.insert(index_js_1.buildings).values({
         zoneId: zoneA.id,
         code: 'SCI',
         name: 'Science Labs',
         description: 'Chemistry and physics laboratories',
         status: 'critical',
         mapCoordinates: { x: 500, y: 120, width: 150, height: 100 },
-    }).returning();
-    const [library] = await database_js_1.db.insert(index_js_1.buildings).values({
+    }).$returningId();
+    const [scienceLabs] = await database_js_1.db.select().from(index_js_1.buildings).where((0, drizzle_orm_1.eq)(index_js_1.buildings.id, scienceLabsResult[0].id));
+    const libraryResult = await database_js_1.db.insert(index_js_1.buildings).values({
         zoneId: zoneB.id,
         code: 'LIB',
         name: 'Main Library',
         description: 'Campus library',
         status: 'operational',
         mapCoordinates: { x: 550, y: 300, width: 150, height: 100 },
-    }).returning();
-    const [building404] = await database_js_1.db.insert(index_js_1.buildings).values({
+    }).$returningId();
+    const [library] = await database_js_1.db.select().from(index_js_1.buildings).where((0, drizzle_orm_1.eq)(index_js_1.buildings.id, libraryResult[0].id));
+    const building404Result = await database_js_1.db.insert(index_js_1.buildings).values({
         zoneId: zoneA.id,
         code: '404',
         name: 'Building 404 - Engineering Wing',
         description: 'Engineering wing with server room',
         status: 'operational',
-    }).returning();
+    }).$returningId();
+    const [building404] = await database_js_1.db.select().from(index_js_1.buildings).where((0, drizzle_orm_1.eq)(index_js_1.buildings.id, building404Result[0].id));
     // Create panels for Building 404
     console.log('Creating panels...');
     const panelData = [
@@ -116,12 +128,13 @@ async function seed() {
     ];
     const insertedPanels = [];
     for (const p of panelData) {
-        const [panel] = await database_js_1.db.insert(index_js_1.panels).values({
+        const result = await database_js_1.db.insert(index_js_1.panels).values({
             buildingId: building404.id,
             ...p,
             uptimeSeconds: Math.floor(Math.random() * 10000000),
             startedAt: new Date(Date.now() - Math.random() * 86400000 * 30),
-        }).returning();
+        }).$returningId();
+        const [panel] = await database_js_1.db.select().from(index_js_1.panels).where((0, drizzle_orm_1.eq)(index_js_1.panels.id, result[0].id));
         insertedPanels.push(panel);
     }
     // Create sample readings for each panel

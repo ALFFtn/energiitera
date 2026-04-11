@@ -37,11 +37,11 @@ class PanelService {
         };
     }
     async updatePanel(id, data) {
-        const [updated] = await database_js_1.db
+        await database_js_1.db
             .update(index_js_1.panels)
             .set(data)
-            .where((0, drizzle_orm_1.eq)(index_js_1.panels.id, id))
-            .returning();
+            .where((0, drizzle_orm_1.eq)(index_js_1.panels.id, id));
+        const [updated] = await database_js_1.db.select().from(index_js_1.panels).where((0, drizzle_orm_1.eq)(index_js_1.panels.id, id));
         if (!updated) {
             throw new errorHandler_js_1.AppError('Panel not found', 404);
         }
@@ -82,7 +82,8 @@ class PanelService {
         });
     }
     async createEvent(data) {
-        const [event] = await database_js_1.db.insert(index_js_1.panelEvents).values(data).returning();
+        const result = await database_js_1.db.insert(index_js_1.panelEvents).values(data).$returningId();
+        const [event] = await database_js_1.db.select().from(index_js_1.panelEvents).where((0, drizzle_orm_1.eq)(index_js_1.panelEvents.id, result[0].id));
         return event;
     }
     // Thresholds
@@ -97,17 +98,18 @@ class PanelService {
             where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(index_js_1.alertThresholds.panelId, panelId), (0, drizzle_orm_1.eq)(index_js_1.alertThresholds.metric, data.metric)),
         });
         if (existing) {
-            const [updated] = await database_js_1.db
+            await database_js_1.db
                 .update(index_js_1.alertThresholds)
                 .set(data)
-                .where((0, drizzle_orm_1.eq)(index_js_1.alertThresholds.id, existing.id))
-                .returning();
+                .where((0, drizzle_orm_1.eq)(index_js_1.alertThresholds.id, existing.id));
+            const [updated] = await database_js_1.db.select().from(index_js_1.alertThresholds).where((0, drizzle_orm_1.eq)(index_js_1.alertThresholds.id, existing.id));
             return updated;
         }
-        const [created] = await database_js_1.db
+        const result = await database_js_1.db
             .insert(index_js_1.alertThresholds)
             .values({ ...data, panelId })
-            .returning();
+            .$returningId();
+        const [created] = await database_js_1.db.select().from(index_js_1.alertThresholds).where((0, drizzle_orm_1.eq)(index_js_1.alertThresholds.id, result[0].id));
         return created;
     }
     // Get all panels with their latest readings (for monitoring view)

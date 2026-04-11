@@ -1,48 +1,48 @@
-export declare const panels: import("drizzle-orm/pg-core").PgTableWithColumns<{
+export declare const panels: import("drizzle-orm/mysql-core").MySqlTableWithColumns<{
     name: "panels";
     schema: undefined;
     columns: {
-        id: import("drizzle-orm/pg-core").PgColumn<{
+        id: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "id";
             tableName: "panels";
             dataType: "string";
-            columnType: "PgUUID";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: true;
             isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
+            hasRuntimeDefault: true;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        buildingId: import("drizzle-orm/pg-core").PgColumn<{
+        buildingId: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "building_id";
             tableName: "panels";
             dataType: "string";
-            columnType: "PgUUID";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: undefined;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        code: import("drizzle-orm/pg-core").PgColumn<{
+        code: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "code";
             tableName: "panels";
             dataType: "string";
-            columnType: "PgVarchar";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
@@ -52,16 +52,14 @@ export declare const panels: import("drizzle-orm/pg-core").PgTableWithColumns<{
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            length: 20;
-        }>;
-        name: import("drizzle-orm/pg-core").PgColumn<{
+        }, {}, {}>;
+        name: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "name";
             tableName: "panels";
             dataType: "string";
-            columnType: "PgVarchar";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
@@ -71,16 +69,14 @@ export declare const panels: import("drizzle-orm/pg-core").PgTableWithColumns<{
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            length: 100;
-        }>;
-        description: import("drizzle-orm/pg-core").PgColumn<{
+        }, {}, {}>;
+        description: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "description";
             tableName: "panels";
             dataType: "string";
-            columnType: "PgVarchar";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: false;
             hasDefault: false;
             isPrimaryKey: false;
@@ -90,16 +86,14 @@ export declare const panels: import("drizzle-orm/pg-core").PgTableWithColumns<{
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            length: 255;
-        }>;
-        location: import("drizzle-orm/pg-core").PgColumn<{
+        }, {}, {}>;
+        location: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "location";
             tableName: "panels";
             dataType: "string";
-            columnType: "PgVarchar";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: false;
             hasDefault: false;
             isPrimaryKey: false;
@@ -109,16 +103,14 @@ export declare const panels: import("drizzle-orm/pg-core").PgTableWithColumns<{
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            length: 100;
-        }>;
-        status: import("drizzle-orm/pg-core").PgColumn<{
+        }, {}, {}>;
+        status: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "status";
             tableName: "panels";
             dataType: "string";
-            columnType: "PgVarchar";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
@@ -128,16 +120,14 @@ export declare const panels: import("drizzle-orm/pg-core").PgTableWithColumns<{
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            length: 20;
-        }>;
-        maintenanceMode: import("drizzle-orm/pg-core").PgColumn<{
+        }, {}, {}>;
+        maintenanceMode: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "maintenance_mode";
             tableName: "panels";
             dataType: "boolean";
-            columnType: "PgBoolean";
+            columnType: "MySqlBoolean";
             data: boolean;
-            driverParam: boolean;
+            driverParam: number | boolean;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
@@ -148,11 +138,11 @@ export declare const panels: import("drizzle-orm/pg-core").PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        uptimeSeconds: import("drizzle-orm/pg-core").PgColumn<{
+        uptimeSeconds: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "uptime_seconds";
             tableName: "panels";
             dataType: "number";
-            columnType: "PgBigInt53";
+            columnType: "MySqlBigInt53";
             data: number;
             driverParam: string | number;
             notNull: true;
@@ -165,13 +155,13 @@ export declare const panels: import("drizzle-orm/pg-core").PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        startedAt: import("drizzle-orm/pg-core").PgColumn<{
+        startedAt: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "started_at";
             tableName: "panels";
             dataType: "date";
-            columnType: "PgTimestamp";
+            columnType: "MySqlTimestamp";
             data: Date;
-            driverParam: string;
+            driverParam: string | number;
             notNull: false;
             hasDefault: false;
             isPrimaryKey: false;
@@ -182,13 +172,13 @@ export declare const panels: import("drizzle-orm/pg-core").PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+        createdAt: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "created_at";
             tableName: "panels";
             dataType: "date";
-            columnType: "PgTimestamp";
+            columnType: "MySqlTimestamp";
             data: Date;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
@@ -200,53 +190,53 @@ export declare const panels: import("drizzle-orm/pg-core").PgTableWithColumns<{
             generated: undefined;
         }, {}, {}>;
     };
-    dialect: "pg";
+    dialect: "mysql";
 }>;
-export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithColumns<{
+export declare const panelReadings: import("drizzle-orm/mysql-core").MySqlTableWithColumns<{
     name: "panel_readings";
     schema: undefined;
     columns: {
-        id: import("drizzle-orm/pg-core").PgColumn<{
+        id: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "id";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgUUID";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: true;
             isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
+            hasRuntimeDefault: true;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        panelId: import("drizzle-orm/pg-core").PgColumn<{
+        panelId: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "panel_id";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgUUID";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: undefined;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        timestamp: import("drizzle-orm/pg-core").PgColumn<{
+        timestamp: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "timestamp";
             tableName: "panel_readings";
             dataType: "date";
-            columnType: "PgTimestamp";
+            columnType: "MySqlTimestamp";
             data: Date;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
@@ -257,11 +247,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        voltageLn: import("drizzle-orm/pg-core").PgColumn<{
+        voltageLn: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "voltage_ln";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -274,11 +264,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        voltageLnMin: import("drizzle-orm/pg-core").PgColumn<{
+        voltageLnMin: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "voltage_ln_min";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -291,11 +281,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        voltageLnMax: import("drizzle-orm/pg-core").PgColumn<{
+        voltageLnMax: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "voltage_ln_max";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -308,11 +298,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        currentTotal: import("drizzle-orm/pg-core").PgColumn<{
+        currentTotal: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "current_total";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -325,11 +315,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        currentPhaseA: import("drizzle-orm/pg-core").PgColumn<{
+        currentPhaseA: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "current_phase_a";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -342,11 +332,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        currentPhaseB: import("drizzle-orm/pg-core").PgColumn<{
+        currentPhaseB: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "current_phase_b";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -359,11 +349,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        currentPhaseC: import("drizzle-orm/pg-core").PgColumn<{
+        currentPhaseC: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "current_phase_c";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -376,11 +366,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        powerFactor: import("drizzle-orm/pg-core").PgColumn<{
+        powerFactor: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "power_factor";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -393,11 +383,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        frequency: import("drizzle-orm/pg-core").PgColumn<{
+        frequency: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "frequency";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -410,11 +400,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        powerKw: import("drizzle-orm/pg-core").PgColumn<{
+        powerKw: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "power_kw";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -427,11 +417,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        energyKwh: import("drizzle-orm/pg-core").PgColumn<{
+        energyKwh: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "energy_kwh";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -444,11 +434,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        signalQuality: import("drizzle-orm/pg-core").PgColumn<{
+        signalQuality: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "signal_quality";
             tableName: "panel_readings";
             dataType: "number";
-            columnType: "PgInteger";
+            columnType: "MySqlInt";
             data: number;
             driverParam: string | number;
             notNull: false;
@@ -461,11 +451,11 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        thdPercentage: import("drizzle-orm/pg-core").PgColumn<{
+        thdPercentage: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "thd_percentage";
             tableName: "panel_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -479,53 +469,53 @@ export declare const panelReadings: import("drizzle-orm/pg-core").PgTableWithCol
             generated: undefined;
         }, {}, {}>;
     };
-    dialect: "pg";
+    dialect: "mysql";
 }>;
-export declare const panelEvents: import("drizzle-orm/pg-core").PgTableWithColumns<{
+export declare const panelEvents: import("drizzle-orm/mysql-core").MySqlTableWithColumns<{
     name: "panel_events";
     schema: undefined;
     columns: {
-        id: import("drizzle-orm/pg-core").PgColumn<{
+        id: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "id";
             tableName: "panel_events";
             dataType: "string";
-            columnType: "PgUUID";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: true;
             isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
+            hasRuntimeDefault: true;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        panelId: import("drizzle-orm/pg-core").PgColumn<{
+        panelId: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "panel_id";
             tableName: "panel_events";
             dataType: "string";
-            columnType: "PgUUID";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: undefined;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        type: import("drizzle-orm/pg-core").PgColumn<{
+        type: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "type";
             tableName: "panel_events";
             dataType: "string";
-            columnType: "PgVarchar";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
@@ -535,16 +525,14 @@ export declare const panelEvents: import("drizzle-orm/pg-core").PgTableWithColum
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            length: 50;
-        }>;
-        severity: import("drizzle-orm/pg-core").PgColumn<{
+        }, {}, {}>;
+        severity: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "severity";
             tableName: "panel_events";
             dataType: "string";
-            columnType: "PgVarchar";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
@@ -554,16 +542,14 @@ export declare const panelEvents: import("drizzle-orm/pg-core").PgTableWithColum
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            length: 20;
-        }>;
-        title: import("drizzle-orm/pg-core").PgColumn<{
+        }, {}, {}>;
+        title: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "title";
             tableName: "panel_events";
             dataType: "string";
-            columnType: "PgVarchar";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
@@ -573,16 +559,14 @@ export declare const panelEvents: import("drizzle-orm/pg-core").PgTableWithColum
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            length: 200;
-        }>;
-        description: import("drizzle-orm/pg-core").PgColumn<{
+        }, {}, {}>;
+        description: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "description";
             tableName: "panel_events";
             dataType: "string";
-            columnType: "PgVarchar";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: false;
             hasDefault: false;
             isPrimaryKey: false;
@@ -592,33 +576,31 @@ export declare const panelEvents: import("drizzle-orm/pg-core").PgTableWithColum
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            length: 500;
-        }>;
-        userId: import("drizzle-orm/pg-core").PgColumn<{
+        }, {}, {}>;
+        userId: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "user_id";
             tableName: "panel_events";
             dataType: "string";
-            columnType: "PgUUID";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: false;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: undefined;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+        createdAt: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "created_at";
             tableName: "panel_events";
             dataType: "date";
-            columnType: "PgTimestamp";
+            columnType: "MySqlTimestamp";
             data: Date;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
@@ -630,53 +612,36 @@ export declare const panelEvents: import("drizzle-orm/pg-core").PgTableWithColum
             generated: undefined;
         }, {}, {}>;
     };
-    dialect: "pg";
+    dialect: "mysql";
 }>;
-export declare const alertThresholds: import("drizzle-orm/pg-core").PgTableWithColumns<{
+export declare const alertThresholds: import("drizzle-orm/mysql-core").MySqlTableWithColumns<{
     name: "alert_thresholds";
     schema: undefined;
     columns: {
-        id: import("drizzle-orm/pg-core").PgColumn<{
+        id: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "id";
             tableName: "alert_thresholds";
             dataType: "string";
-            columnType: "PgUUID";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: true;
             isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
+            hasRuntimeDefault: true;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        panelId: import("drizzle-orm/pg-core").PgColumn<{
+        panelId: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "panel_id";
             tableName: "alert_thresholds";
             dataType: "string";
-            columnType: "PgUUID";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
-            notNull: true;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        metric: import("drizzle-orm/pg-core").PgColumn<{
-            name: "metric";
-            tableName: "alert_thresholds";
-            dataType: "string";
-            columnType: "PgVarchar";
-            data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
@@ -686,14 +651,29 @@ export declare const alertThresholds: import("drizzle-orm/pg-core").PgTableWithC
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            length: 50;
-        }>;
-        minWarning: import("drizzle-orm/pg-core").PgColumn<{
+        }, {}, {}>;
+        metric: import("drizzle-orm/mysql-core").MySqlColumn<{
+            name: "metric";
+            tableName: "alert_thresholds";
+            dataType: "string";
+            columnType: "MySqlVarChar";
+            data: string;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        minWarning: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "min_warning";
             tableName: "alert_thresholds";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -706,11 +686,11 @@ export declare const alertThresholds: import("drizzle-orm/pg-core").PgTableWithC
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        maxWarning: import("drizzle-orm/pg-core").PgColumn<{
+        maxWarning: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "max_warning";
             tableName: "alert_thresholds";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -723,11 +703,11 @@ export declare const alertThresholds: import("drizzle-orm/pg-core").PgTableWithC
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        minCritical: import("drizzle-orm/pg-core").PgColumn<{
+        minCritical: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "min_critical";
             tableName: "alert_thresholds";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -740,11 +720,11 @@ export declare const alertThresholds: import("drizzle-orm/pg-core").PgTableWithC
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        maxCritical: import("drizzle-orm/pg-core").PgColumn<{
+        maxCritical: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "max_critical";
             tableName: "alert_thresholds";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -758,7 +738,7 @@ export declare const alertThresholds: import("drizzle-orm/pg-core").PgTableWithC
             generated: undefined;
         }, {}, {}>;
     };
-    dialect: "pg";
+    dialect: "mysql";
 }>;
 export declare const panelsRelations: import("drizzle-orm").Relations<"panels", {
     building: import("drizzle-orm").One<"buildings", true>;

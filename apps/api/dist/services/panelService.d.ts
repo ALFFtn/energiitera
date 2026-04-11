@@ -74,30 +74,30 @@ export declare class PanelService {
         }[];
     }>;
     updatePanel(id: string, data: Partial<NewPanel>): Promise<{
-        id: string;
-        buildingId: string;
         code: string;
-        name: string;
-        description: string | null;
-        location: string | null;
         status: string;
+        description: string | null;
+        id: string;
+        name: string;
+        createdAt: Date;
+        location: string | null;
+        buildingId: string;
         maintenanceMode: boolean;
         uptimeSeconds: number;
         startedAt: Date | null;
-        createdAt: Date;
     }>;
     toggleMaintenanceMode(id: string, enabled: boolean): Promise<{
-        id: string;
-        buildingId: string;
         code: string;
-        name: string;
-        description: string | null;
-        location: string | null;
         status: string;
+        description: string | null;
+        id: string;
+        name: string;
+        createdAt: Date;
+        location: string | null;
+        buildingId: string;
         maintenanceMode: boolean;
         uptimeSeconds: number;
         startedAt: Date | null;
-        createdAt: Date;
     }>;
     getReadings(panelId: string, options?: {
         from?: Date;

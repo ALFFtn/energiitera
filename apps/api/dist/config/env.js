@@ -8,7 +8,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const zod_1 = require("zod");
 dotenv_1.default.config();
 const envSchema = zod_1.z.object({
-    DATABASE_URL: zod_1.z.string().url(),
+    DATABASE_URL: zod_1.z.string().min(1),
     JWT_SECRET: zod_1.z.string().min(10),
     JWT_EXPIRES_IN: zod_1.z.string().default('15m'),
     JWT_REFRESH_EXPIRES_IN: zod_1.z.string().default('7d'),

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ProfileMenu } from '../common/ProfileMenu';
+import { useAuth } from '../common/AuthGuard';
 
 export function CommandHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const location = useLocation();
+    const { isAuthenticated } = useAuth();
 
     const isActive = (path: string) => location.pathname === path;
 
@@ -61,16 +63,28 @@ export function CommandHeader() {
                         <span className="material-symbols-outlined text-[16px]">schedule</span>
                         <span>14:32:45 UTC</span>
                     </div>
-                    {/* Search - Hidden on mobile */}
-                    <div className="relative hidden lg:block">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined text-[18px]">search</span>
-                        <input className="h-9 w-48 bg-slate-100 dark:bg-slate-800 border-none text-sm rounded pl-9 pr-3 focus:ring-1 focus:ring-primary text-slate-900 dark:text-white placeholder-slate-500" placeholder="Search..." type="text" />
-                    </div>
-                    <button className="relative p-1.5 md:p-2 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors">
-                        <span className="material-symbols-outlined text-xl">notifications</span>
-                        <span className="absolute top-1 right-1 size-2 bg-danger rounded-full ring-2 ring-white dark:ring-surface-darker"></span>
-                    </button>
-                    <ProfileMenu />
+                    {isAuthenticated ? (
+                        <>
+                            {/* Search - Hidden on mobile */}
+                            <div className="relative hidden lg:block">
+                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined text-[18px]">search</span>
+                                <input className="h-9 w-48 bg-slate-100 dark:bg-slate-800 border-none text-sm rounded pl-9 pr-3 focus:ring-1 focus:ring-primary text-slate-900 dark:text-white placeholder-slate-500" placeholder="Search..." type="text" />
+                            </div>
+                            <button className="relative p-1.5 md:p-2 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors">
+                                <span className="material-symbols-outlined text-xl">notifications</span>
+                                <span className="absolute top-1 right-1 size-2 bg-danger rounded-full ring-2 ring-white dark:ring-surface-darker"></span>
+                            </button>
+                            <ProfileMenu />
+                        </>
+                    ) : (
+                        <Link
+                            to="/login"
+                            className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-blue-600 text-white text-xs font-bold uppercase tracking-wide rounded-md transition-all shadow-[0_0_15px_rgba(13,89,242,0.25)] hover:shadow-[0_0_25px_rgba(13,89,242,0.4)]"
+                        >
+                            <span className="material-symbols-outlined text-[16px]">login</span>
+                            Sign In
+                        </Link>
+                    )}
                 </div>
             </header>
 

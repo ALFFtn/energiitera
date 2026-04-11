@@ -1,48 +1,48 @@
-export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTableWithColumns<{
+export declare const buildingSensorReadings: import("drizzle-orm/mysql-core").MySqlTableWithColumns<{
     name: "building_sensor_readings";
     schema: undefined;
     columns: {
-        id: import("drizzle-orm/pg-core").PgColumn<{
+        id: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "id";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgUUID";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: true;
             isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
+            hasRuntimeDefault: true;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        buildingId: import("drizzle-orm/pg-core").PgColumn<{
+        buildingId: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "building_id";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgUUID";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: undefined;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        sensorId: import("drizzle-orm/pg-core").PgColumn<{
+        sensorId: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "sensor_id";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgVarchar";
+            columnType: "MySqlVarChar";
             data: string;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
@@ -52,16 +52,14 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            length: 50;
-        }>;
-        timestamp: import("drizzle-orm/pg-core").PgColumn<{
+        }, {}, {}>;
+        timestamp: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "timestamp";
             tableName: "building_sensor_readings";
             dataType: "date";
-            columnType: "PgTimestamp";
+            columnType: "MySqlTimestamp";
             data: Date;
-            driverParam: string;
+            driverParam: string | number;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
@@ -72,11 +70,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        voltageR: import("drizzle-orm/pg-core").PgColumn<{
+        voltageR: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "voltage_r";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -89,11 +87,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        voltageS: import("drizzle-orm/pg-core").PgColumn<{
+        voltageS: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "voltage_s";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -106,11 +104,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        voltageT: import("drizzle-orm/pg-core").PgColumn<{
+        voltageT: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "voltage_t";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -123,11 +121,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        currentR: import("drizzle-orm/pg-core").PgColumn<{
+        currentR: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "current_r";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -140,11 +138,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        currentS: import("drizzle-orm/pg-core").PgColumn<{
+        currentS: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "current_s";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -157,11 +155,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        currentT: import("drizzle-orm/pg-core").PgColumn<{
+        currentT: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "current_t";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -174,11 +172,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        power: import("drizzle-orm/pg-core").PgColumn<{
+        power: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "power";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -191,11 +189,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        powerFactor: import("drizzle-orm/pg-core").PgColumn<{
+        powerFactor: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "power_factor";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -208,11 +206,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        frequency: import("drizzle-orm/pg-core").PgColumn<{
+        frequency: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "frequency";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -225,11 +223,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        temperature: import("drizzle-orm/pg-core").PgColumn<{
+        temperature: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "temperature";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -242,11 +240,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        energy: import("drizzle-orm/pg-core").PgColumn<{
+        energy: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "energy";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -259,11 +257,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        thdVoltage: import("drizzle-orm/pg-core").PgColumn<{
+        thdVoltage: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "thd_voltage";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -276,11 +274,11 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        thdCurrent: import("drizzle-orm/pg-core").PgColumn<{
+        thdCurrent: import("drizzle-orm/mysql-core").MySqlColumn<{
             name: "thd_current";
             tableName: "building_sensor_readings";
             dataType: "string";
-            columnType: "PgNumeric";
+            columnType: "MySqlDecimal";
             data: string;
             driverParam: string;
             notNull: false;
@@ -294,7 +292,7 @@ export declare const buildingSensorReadings: import("drizzle-orm/pg-core").PgTab
             generated: undefined;
         }, {}, {}>;
     };
-    dialect: "pg";
+    dialect: "mysql";
 }>;
 export declare const buildingSensorReadingsRelations: import("drizzle-orm").Relations<"building_sensor_readings", {
     building: import("drizzle-orm").One<"buildings", true>;

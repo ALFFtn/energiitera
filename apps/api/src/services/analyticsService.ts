@@ -21,13 +21,9 @@ export class AnalyticsService {
             conditions.push(eq(consumptionRecords.buildingId, buildingId));
         }
 
-        const records = await db.query.consumptionRecords.findMany({
-            where: conditions.length > 0 ? and(...conditions) : undefined,
-            orderBy: [desc(consumptionRecords.timestamp)],
-            with: {
-                department: true,
-            },
-        });
+        const records = await db.select().from(consumptionRecords).where(
+            conditions.length > 0 ? and(...conditions) : undefined
+        ).orderBy(desc(consumptionRecords.timestamp));
 
         return records;
     }

@@ -1,13 +1,13 @@
 # Dashboard Energy API
 
-Backend API for the Dashboard Energy monitoring system built with **Express.js**, **Drizzle ORM**, and **PostgreSQL**.
+Backend API for the Dashboard Energy monitoring system built with **Express.js**, **Drizzle ORM**, and **MySQL**.
 
 ## Tech Stack
 
 - **Runtime**: Node.js 18+
 - **Framework**: Express.js
 - **ORM**: Drizzle ORM
-- **Database**: PostgreSQL
+- **Database**: MySQL (XAMPP)
 - **Auth**: JWT (JSON Web Tokens)
 - **Validation**: Zod
 - **Language**: TypeScript
@@ -15,8 +15,8 @@ Backend API for the Dashboard Energy monitoring system built with **Express.js**
 ## Prerequisites
 
 - Node.js 18+
-- PostgreSQL 14+ (running locally or via Docker)
-- A PostgreSQL database named `dashboard_energy`
+- XAMPP (MySQL service enabled)
+- A MySQL database named `dashboard_energy`
 
 ## Quick Start
 
@@ -36,7 +36,7 @@ cp .env.example .env
 
 Edit `.env` and update your database connection:
 ```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dashboard_energy
+DATABASE_URL=mysql://root@localhost:3306/dashboard_energy
 ```
 
 ### 3. Create the database
@@ -44,6 +44,8 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dashboard_energy
 ```sql
 CREATE DATABASE dashboard_energy;
 ```
+
+If you are using XAMPP, make sure MySQL is running from the XAMPP Control Panel before creating the database.
 
 ### 4. Push schema to database
 

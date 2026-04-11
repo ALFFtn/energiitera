@@ -1,11 +1,12 @@
-import { pgTable, uuid, varchar, timestamp, decimal, index } from 'drizzle-orm/pg-core';
+import { mysqlTable, varchar, timestamp, decimal, index } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { buildings } from './buildings';
+import crypto from 'crypto';
 
 // Building sensor readings for LVMDP data
-export const buildingSensorReadings = pgTable('building_sensor_readings', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    buildingId: uuid('building_id').notNull().references(() => buildings.id, { onDelete: 'cascade' }),
+export const buildingSensorReadings = mysqlTable('building_sensor_readings', {
+    id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    buildingId: varchar('building_id', { length: 36 }).notNull().references(() => buildings.id, { onDelete: 'cascade' }),
     sensorId: varchar('sensor_id', { length: 50 }).notNull().default('lvmdp-01'),
     timestamp: timestamp('timestamp').notNull().defaultNow(),
 

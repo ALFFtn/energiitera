@@ -1,8 +1,9 @@
-import { pgTable, uuid, varchar, text, timestamp } from 'drizzle-orm/pg-core';
+import { mysqlTable, varchar, text, timestamp } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
+import crypto from 'crypto';
 
-export const users = pgTable('users', {
-    id: uuid('id').primaryKey().defaultRandom(),
+export const users = mysqlTable('users', {
+    id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
     email: varchar('email', { length: 255 }).notNull().unique(),
     passwordHash: varchar('password_hash', { length: 255 }).notNull(),
     name: varchar('name', { length: 100 }).notNull(),
@@ -12,9 +13,9 @@ export const users = pgTable('users', {
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const sessions = pgTable('sessions', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+export const sessions = mysqlTable('sessions', {
+    id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: varchar('user_id', { length: 36 }).notNull().references(() => users.id, { onDelete: 'cascade' }),
     refreshToken: varchar('refresh_token', { length: 500 }).notNull(),
     expiresAt: timestamp('expires_at').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),

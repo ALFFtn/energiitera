@@ -23,7 +23,7 @@ class AuthService {
         // Hash password
         const passwordHash = await bcryptjs_1.default.hash(data.password, 12);
         // Create user
-        const [user] = await database_js_1.db
+        const result = await database_js_1.db
             .insert(index_js_1.users)
             .values({
             email: data.email,
@@ -31,7 +31,8 @@ class AuthService {
             name: data.name,
             role: data.role || 'operator',
         })
-            .returning();
+            .$returningId();
+        const [user] = await database_js_1.db.select().from(index_js_1.users).where((0, drizzle_orm_1.eq)(index_js_1.users.id, result[0].id));
         return {
             id: user.id,
             email: user.email,

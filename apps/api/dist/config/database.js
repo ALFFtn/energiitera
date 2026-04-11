@@ -37,10 +37,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.db = void 0;
-const postgres_js_1 = require("drizzle-orm/postgres-js");
-const postgres_1 = __importDefault(require("postgres"));
+const mysql2_1 = require("drizzle-orm/mysql2");
+const promise_1 = __importDefault(require("mysql2/promise"));
 const env_js_1 = require("./env.js");
 const schema = __importStar(require("../db/schema/index.js"));
-const client = (0, postgres_1.default)(env_js_1.env.DATABASE_URL);
-exports.db = (0, postgres_js_1.drizzle)(client, { schema });
+const pool = promise_1.default.createPool(env_js_1.env.DATABASE_URL);
+exports.db = (0, mysql2_1.drizzle)(pool, { schema, mode: 'default' });
 //# sourceMappingURL=database.js.map

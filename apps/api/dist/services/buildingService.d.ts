@@ -1,18 +1,7 @@
 import { type NewBuilding } from '../db/schema/index.js';
 export declare class BuildingService {
     getAllCampuses(): Promise<{
-        id: string;
-        name: string;
-        createdAt: Date;
-        location: string | null;
-        timezone: string;
         zones: {
-            code: string;
-            status: string;
-            id: string;
-            name: string;
-            createdAt: Date;
-            campusId: string;
             buildings: {
                 code: string;
                 status: string;
@@ -25,21 +14,21 @@ export declare class BuildingService {
                 lastSyncAt: Date | null;
                 mapCoordinates: unknown;
             }[];
+            code: string;
+            status: string;
+            id: string;
+            name: string;
+            createdAt: Date;
+            campusId: string;
         }[];
+        id: string;
+        name: string;
+        createdAt: Date;
+        location: string | null;
+        timezone: string;
     }[]>;
     getCampusById(id: string): Promise<{
-        id: string;
-        name: string;
-        createdAt: Date;
-        location: string | null;
-        timezone: string;
         zones: {
-            code: string;
-            status: string;
-            id: string;
-            name: string;
-            createdAt: Date;
-            campusId: string;
             buildings: {
                 code: string;
                 status: string;
@@ -52,15 +41,20 @@ export declare class BuildingService {
                 lastSyncAt: Date | null;
                 mapCoordinates: unknown;
             }[];
+            code: string;
+            status: string;
+            id: string;
+            name: string;
+            createdAt: Date;
+            campusId: string;
         }[];
+        id: string;
+        name: string;
+        createdAt: Date;
+        location: string | null;
+        timezone: string;
     }>;
     getZonesByCampus(campusId: string): Promise<{
-        code: string;
-        status: string;
-        id: string;
-        name: string;
-        createdAt: Date;
-        campusId: string;
         buildings: {
             code: string;
             status: string;
@@ -73,26 +67,14 @@ export declare class BuildingService {
             lastSyncAt: Date | null;
             mapCoordinates: unknown;
         }[];
+        code: string;
+        status: string;
+        id: string;
+        name: string;
+        createdAt: Date;
+        campusId: string;
     }[]>;
     getZoneById(id: string): Promise<{
-        code: string;
-        status: string;
-        id: string;
-        name: string;
-        createdAt: Date;
-        campusId: string;
-        buildings: {
-            code: string;
-            status: string;
-            description: string | null;
-            id: string;
-            name: string;
-            createdAt: Date;
-            zoneId: string;
-            gridConnection: string;
-            lastSyncAt: Date | null;
-            mapCoordinates: unknown;
-        }[];
         campus: {
             id: string;
             name: string;
@@ -100,8 +82,41 @@ export declare class BuildingService {
             location: string | null;
             timezone: string;
         };
+        buildings: {
+            code: string;
+            status: string;
+            description: string | null;
+            id: string;
+            name: string;
+            createdAt: Date;
+            zoneId: string;
+            gridConnection: string;
+            lastSyncAt: Date | null;
+            mapCoordinates: unknown;
+        }[];
+        code: string;
+        status: string;
+        id: string;
+        name: string;
+        createdAt: Date;
+        campusId: string;
     }>;
     getAllBuildings(): Promise<{
+        zone: {
+            campus: {
+                id: string;
+                name: string;
+                createdAt: Date;
+                location: string | null;
+                timezone: string;
+            } | null;
+            code: string;
+            status: string;
+            id: string;
+            name: string;
+            createdAt: Date;
+            campusId: string;
+        } | null;
         code: string;
         status: string;
         description: string | null;
@@ -112,21 +127,6 @@ export declare class BuildingService {
         gridConnection: string;
         lastSyncAt: Date | null;
         mapCoordinates: unknown;
-        zone: {
-            code: string;
-            status: string;
-            id: string;
-            name: string;
-            createdAt: Date;
-            campusId: string;
-            campus: {
-                id: string;
-                name: string;
-                createdAt: Date;
-                location: string | null;
-                timezone: string;
-            };
-        };
     }[]>;
     getBuildingsByZone(zoneId: string): Promise<{
         code: string;
@@ -141,23 +141,7 @@ export declare class BuildingService {
         mapCoordinates: unknown;
     }[]>;
     getBuildingById(id: string): Promise<{
-        code: string;
-        status: string;
-        description: string | null;
-        id: string;
-        name: string;
-        createdAt: Date;
-        zoneId: string;
-        gridConnection: string;
-        lastSyncAt: Date | null;
-        mapCoordinates: unknown;
         zone: {
-            code: string;
-            status: string;
-            id: string;
-            name: string;
-            createdAt: Date;
-            campusId: string;
             campus: {
                 id: string;
                 name: string;
@@ -165,19 +149,35 @@ export declare class BuildingService {
                 location: string | null;
                 timezone: string;
             };
-        };
-    }>;
-    updateBuilding(id: string, data: Partial<NewBuilding>): Promise<{
-        id: string;
-        zoneId: string;
+            code: string;
+            status: string;
+            id: string;
+            name: string;
+            createdAt: Date;
+            campusId: string;
+        } | null;
         code: string;
-        name: string;
-        description: string | null;
         status: string;
+        description: string | null;
+        id: string;
+        name: string;
+        createdAt: Date;
+        zoneId: string;
         gridConnection: string;
         lastSyncAt: Date | null;
         mapCoordinates: unknown;
+    }>;
+    updateBuilding(id: string, data: Partial<NewBuilding>): Promise<{
+        code: string;
+        status: string;
+        description: string | null;
+        id: string;
+        name: string;
         createdAt: Date;
+        zoneId: string;
+        gridConnection: string;
+        lastSyncAt: Date | null;
+        mapCoordinates: unknown;
     }>;
     createBuilding(data: {
         zoneId: string;
@@ -226,10 +226,10 @@ export declare class BuildingService {
         mapCoordinates: unknown;
     }>;
     getBuildingsMapData(zoneId?: string): Promise<{
-        code: string;
-        status: string;
         id: string;
+        code: string;
         name: string;
+        status: string;
         mapCoordinates: unknown;
     }[]>;
 }

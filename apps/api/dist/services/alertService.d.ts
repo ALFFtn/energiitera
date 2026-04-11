@@ -163,26 +163,26 @@ export declare class AlertService {
         acknowledgedAt: Date | null;
     }>;
     acknowledgeAlert(id: string, userId: string): Promise<{
-        id: string;
-        panelId: string | null;
-        buildingId: string | null;
-        severity: string;
-        title: string;
         message: string | null;
         status: string;
+        id: string;
+        buildingId: string | null;
+        panelId: string | null;
+        severity: string;
+        title: string;
         triggeredAt: Date;
         resolvedAt: Date | null;
         acknowledgedBy: string | null;
         acknowledgedAt: Date | null;
     }>;
     resolveAlert(id: string): Promise<{
-        id: string;
-        panelId: string | null;
-        buildingId: string | null;
-        severity: string;
-        title: string;
         message: string | null;
         status: string;
+        id: string;
+        buildingId: string | null;
+        panelId: string | null;
+        severity: string;
+        title: string;
         triggeredAt: Date;
         resolvedAt: Date | null;
         acknowledgedBy: string | null;

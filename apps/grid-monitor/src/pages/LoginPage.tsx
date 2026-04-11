@@ -1,9 +1,16 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { API_URL } from '../config/api';
+
+interface LocationState {
+    from?: { pathname: string };
+}
 
 export function LoginPage() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const locationState = location.state as LocationState | null;
+    const returnTo = locationState?.from?.pathname || '/';
     const [email, setEmail] = useState('admin@gridmonitor.iot');
     const [password, setPassword] = useState('password');
     const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +43,7 @@ export function LoginPage() {
             localStorage.setItem('user', JSON.stringify(data.data.user));
 
             console.log('Login successful:', data.data.user);
-            navigate('/');
+            navigate(returnTo);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Login failed');
         } finally {

@@ -1,18 +1,19 @@
-import { pgTable, uuid, varchar, timestamp, decimal, integer, index } from 'drizzle-orm/pg-core';
+import { mysqlTable, varchar, timestamp, decimal, int, index } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { campuses } from './buildings';
+import crypto from 'crypto';
 
-export const departments = pgTable('departments', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    campusId: uuid('campus_id').notNull().references(() => campuses.id, { onDelete: 'cascade' }),
+export const departments = mysqlTable('departments', {
+    id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    campusId: varchar('campus_id', { length: 36 }).notNull().references(() => campuses.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 100 }).notNull(),
     color: varchar('color', { length: 20 }),
 });
 
-export const consumptionRecords = pgTable('consumption_records', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    departmentId: uuid('department_id').notNull().references(() => departments.id, { onDelete: 'cascade' }),
-    buildingId: uuid('building_id'),
+export const consumptionRecords = mysqlTable('consumption_records', {
+    id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    departmentId: varchar('department_id', { length: 36 }).notNull().references(() => departments.id, { onDelete: 'cascade' }),
+    buildingId: varchar('building_id', { length: 36 }),
     timestamp: timestamp('timestamp').notNull(),
     consumptionKwh: decimal('consumption_kwh', { precision: 12, scale: 2 }).notNull(),
     costUsd: decimal('cost_usd', { precision: 10, scale: 2 }),
@@ -21,14 +22,14 @@ export const consumptionRecords = pgTable('consumption_records', {
     index('consumption_records_department_id_idx').on(table.departmentId),
 ]);
 
-export const gridMetrics = pgTable('grid_metrics', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    campusId: uuid('campus_id').notNull().references(() => campuses.id, { onDelete: 'cascade' }),
+export const gridMetrics = mysqlTable('grid_metrics', {
+    id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    campusId: varchar('campus_id', { length: 36 }).notNull().references(() => campuses.id, { onDelete: 'cascade' }),
     timestamp: timestamp('timestamp').notNull().defaultNow(),
     totalLoadMw: decimal('total_load_mw', { precision: 8, scale: 3 }),
     frequencyHz: decimal('frequency_hz', { precision: 6, scale: 3 }),
     powerFactor: decimal('power_factor', { precision: 4, scale: 3 }),
-    activeAlarms: integer('active_alarms').notNull().default(0),
+    activeAlarms: int('active_alarms').notNull().default(0),
     carbonFootprintTons: decimal('carbon_footprint_tons', { precision: 8, scale: 2 }),
     estimatedCostPerHour: decimal('estimated_cost_per_hour', { precision: 10, scale: 2 }),
 }, (table) => [

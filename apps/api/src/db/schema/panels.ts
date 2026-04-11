@@ -1,10 +1,11 @@
-import { pgTable, uuid, varchar, boolean, bigint, timestamp, decimal, integer, index } from 'drizzle-orm/pg-core';
+import { mysqlTable, varchar, boolean, bigint, timestamp, decimal, int, index } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { buildings } from './buildings';
+import crypto from 'crypto';
 
-export const panels = pgTable('panels', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    buildingId: uuid('building_id').notNull().references(() => buildings.id, { onDelete: 'cascade' }),
+export const panels = mysqlTable('panels', {
+    id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    buildingId: varchar('building_id', { length: 36 }).notNull().references(() => buildings.id, { onDelete: 'cascade' }),
     code: varchar('code', { length: 20 }).notNull(),
     name: varchar('name', { length: 100 }).notNull(),
     description: varchar('description', { length: 255 }),
@@ -16,9 +17,9 @@ export const panels = pgTable('panels', {
     createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
-export const panelReadings = pgTable('panel_readings', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    panelId: uuid('panel_id').notNull().references(() => panels.id, { onDelete: 'cascade' }),
+export const panelReadings = mysqlTable('panel_readings', {
+    id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    panelId: varchar('panel_id', { length: 36 }).notNull().references(() => panels.id, { onDelete: 'cascade' }),
     timestamp: timestamp('timestamp').notNull().defaultNow(),
     voltageLn: decimal('voltage_ln', { precision: 8, scale: 2 }),
     voltageLnMin: decimal('voltage_ln_min', { precision: 8, scale: 2 }),
@@ -31,27 +32,27 @@ export const panelReadings = pgTable('panel_readings', {
     frequency: decimal('frequency', { precision: 6, scale: 3 }),
     powerKw: decimal('power_kw', { precision: 10, scale: 2 }),
     energyKwh: decimal('energy_kwh', { precision: 12, scale: 2 }),
-    signalQuality: integer('signal_quality'),
+    signalQuality: int('signal_quality'),
     thdPercentage: decimal('thd_percentage', { precision: 5, scale: 2 }),
 }, (table) => [
     index('panel_readings_panel_id_idx').on(table.panelId),
     index('panel_readings_timestamp_idx').on(table.timestamp),
 ]);
 
-export const panelEvents = pgTable('panel_events', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    panelId: uuid('panel_id').notNull().references(() => panels.id, { onDelete: 'cascade' }),
+export const panelEvents = mysqlTable('panel_events', {
+    id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    panelId: varchar('panel_id', { length: 36 }).notNull().references(() => panels.id, { onDelete: 'cascade' }),
     type: varchar('type', { length: 50 }).notNull(),
     severity: varchar('severity', { length: 20 }).notNull().default('info'),
     title: varchar('title', { length: 200 }).notNull(),
     description: varchar('description', { length: 500 }),
-    userId: uuid('user_id'),
+    userId: varchar('user_id', { length: 36 }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
-export const alertThresholds = pgTable('alert_thresholds', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    panelId: uuid('panel_id').notNull().references(() => panels.id, { onDelete: 'cascade' }),
+export const alertThresholds = mysqlTable('alert_thresholds', {
+    id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    panelId: varchar('panel_id', { length: 36 }).notNull().references(() => panels.id, { onDelete: 'cascade' }),
     metric: varchar('metric', { length: 50 }).notNull(),
     minWarning: decimal('min_warning', { precision: 10, scale: 2 }),
     maxWarning: decimal('max_warning', { precision: 10, scale: 2 }),

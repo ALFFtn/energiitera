@@ -2,54 +2,60 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAllBuildingsSensor } from '../../hooks/useSocket';
 import { API_URL, getAuthHeaders } from '../../config/api';
+import { useAuth } from '../common/AuthGuard';
 
 interface MapBuilding {
     id: string;
     code: string;
     name: string;
     status: 'operational' | 'warning' | 'critical' | 'offline';
-    mapCoordinates?: { x: number; y: number; width: number; height: number } | null;
     zoneName?: string;
     zoneCode?: string;
+    campusName?: string;
+    campusLocation?: string;
 }
 
-const layoutSlots = [
-    { x: 120, y: 260, width: 120, height: 88 },
-    { x: 340, y: 130, width: 140, height: 88 },
-    { x: 580, y: 150, width: 180, height: 94 },
-    { x: 340, y: 370, width: 180, height: 94 },
-    { x: 660, y: 340, width: 160, height: 100 },
-    { x: 130, y: 105, width: 130, height: 84 },
-    { x: 560, y: 430, width: 150, height: 90 },
-    { x: 760, y: 100, width: 130, height: 84 },
-];
+interface ZoneSummary {
+    id: string;
+    code: string;
+    name: string;
+    campusName: string;
+    buildingCount: number;
+    totalPower: number;
+    avgPowerFactor: number;
+    statusCounts: Record<MapBuilding['status'], number>;
+}
 
-const statusPalette: Record<MapBuilding['status'], { stroke: string; dot: string; label: string; pulse: boolean }> = {
-    operational: { stroke: '#64748b', dot: '#20c997', label: '#8fa2bf', pulse: false },
-    warning: { stroke: '#f59e0b', dot: '#fbbf24', label: '#f59e0b', pulse: true },
-    critical: { stroke: '#ef4444', dot: '#ff5252', label: '#ff5252', pulse: true },
-    offline: { stroke: '#475569', dot: '#64748b', label: '#7a8da8', pulse: false },
+interface LiveBuilding extends MapBuilding {
+    liveStatus: MapBuilding['status'];
+    power: number;
+    powerFactor: number;
+    isLive: boolean;
+}
+
+const statusPalette: Record<MapBuilding['status'], { dot: string; bg: string; border: string }> = {
+    operational: { dot: '#20c997', bg: 'rgba(32, 201, 151, 0.10)', border: 'rgba(32, 201, 151, 0.28)' },
+    warning: { dot: '#f59e0b', bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.28)' },
+    critical: { dot: '#ff5252', bg: 'rgba(255, 82, 82, 0.12)', border: 'rgba(255, 82, 82, 0.30)' },
+    offline: { dot: '#8aa2c9', bg: 'rgba(138, 162, 201, 0.08)', border: 'rgba(138, 162, 201, 0.22)' },
 };
 
 export function CampusMap() {
     const [buildings, setBuildings] = useState<MapBuilding[]>([]);
-    const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null);
     const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
     const { getBuildingData, isConnected, totalPower } = useAllBuildingsSensor();
 
-    const getPos = useCallback((building: MapBuilding, i: number) => {
-        if (building.mapCoordinates) {
-            return {
-                x: (building.mapCoordinates.x / 500) * 1000,
-                y: (building.mapCoordinates.y / 350) * 620,
-                width: (building.mapCoordinates.width / 500) * 1000,
-                height: (building.mapCoordinates.height / 350) * 620,
-            };
+    const handleBuildingClick = useCallback((buildingId: string) => {
+        if (isAuthenticated) {
+            navigate(`/building/${buildingId}`);
+            return;
         }
-        return layoutSlots[i % layoutSlots.length];
-    }, []);
 
-    const fetchMapData = useCallback(async () => {
+        navigate('/login', { state: { from: { pathname: `/building/${buildingId}` } } });
+    }, [isAuthenticated, navigate]);
+
+    const fetchBuildingData = useCallback(async () => {
         try {
             const res = await fetch(`${API_URL}/api/campuses`, {
                 headers: getAuthHeaders(),
@@ -60,266 +66,291 @@ export function CampusMap() {
             const allBuildings: MapBuilding[] = [];
             for (const campus of json.data) {
                 for (const zone of campus.zones || []) {
-                    for (const b of zone.buildings || []) {
+                    for (const building of zone.buildings || []) {
                         allBuildings.push({
-                            id: b.id,
-                            code: b.code || '',
-                            name: b.name,
-                            status: b.status || 'operational',
-                            mapCoordinates: b.mapCoordinates || null,
+                            id: building.id,
+                            code: building.code || '',
+                            name: building.name,
+                            status: building.status || 'operational',
                             zoneName: zone.name,
                             zoneCode: zone.code,
+                            campusName: campus.name,
+                            campusLocation: campus.location,
                         });
                     }
                 }
             }
+
             setBuildings(allBuildings);
         } catch {
-            // Keep stale data when request fails.
+            // Keep the previous snapshot on fetch failure.
         }
     }, []);
 
     useEffect(() => {
-        fetchMapData();
-        const interval = setInterval(fetchMapData, 15000);
+        fetchBuildingData();
+        const interval = setInterval(fetchBuildingData, 15000);
         return () => clearInterval(interval);
-    }, [fetchMapData]);
+    }, [fetchBuildingData]);
 
-    const getBuildingStatus = (building: MapBuilding): MapBuilding['status'] => {
+    const resolveStatus = useCallback((building: MapBuilding): MapBuilding['status'] => {
         const live = getBuildingData(building.code);
         if (!live) return building.status;
         if (live.status === 'offline') return 'offline';
         if (live.powerFactor > 0 && live.powerFactor < 0.7) return 'critical';
         if (live.powerFactor > 0 && live.powerFactor < 0.85) return 'warning';
         return building.status;
-    };
+    }, [getBuildingData]);
 
-    const statusCounts = buildings.reduce(
-        (acc, b) => {
-            const s = getBuildingStatus(b);
-            acc[s] = (acc[s] || 0) + 1;
+    const liveBuildings: LiveBuilding[] = buildings.map((building) => {
+        const live = getBuildingData(building.code);
+        return {
+            ...building,
+            liveStatus: resolveStatus(building),
+            power: live?.power ?? 0,
+            powerFactor: live?.powerFactor ?? 0,
+            isLive: Boolean(live),
+        };
+    });
+
+    const statusCounts = liveBuildings.reduce(
+        (acc, building) => {
+            acc[building.liveStatus] += 1;
             return acc;
         },
-        {} as Record<string, number>
+        { operational: 0, warning: 0, critical: 0, offline: 0 } as Record<MapBuilding['status'], number>
     );
+
+    const zoneSummaries = liveBuildings.reduce((acc, building) => {
+        const zoneKey = `${building.zoneCode || 'NA'}-${building.zoneName || 'Unknown Zone'}`;
+        const existing = acc.get(zoneKey) || {
+            id: zoneKey,
+            code: building.zoneCode || 'NA',
+            name: building.zoneName || 'Unknown Zone',
+            campusName: building.campusName || 'Unknown Campus',
+            buildingCount: 0,
+            totalPower: 0,
+            avgPowerFactor: 0,
+            statusCounts: { operational: 0, warning: 0, critical: 0, offline: 0 },
+            _powerFactorSum: 0,
+            _powerFactorCount: 0,
+        } as ZoneSummary & { _powerFactorSum: number; _powerFactorCount: number };
+
+        existing.buildingCount += 1;
+        existing.totalPower += building.power;
+        existing.statusCounts[building.liveStatus] += 1;
+
+        if (building.powerFactor > 0) {
+            existing._powerFactorSum += building.powerFactor;
+            existing._powerFactorCount += 1;
+        }
+
+        acc.set(zoneKey, existing);
+        return acc;
+    }, new Map<string, ZoneSummary & { _powerFactorSum: number; _powerFactorCount: number }>());
+
+    const zones = Array.from(zoneSummaries.values())
+        .map((zone) => ({
+            id: zone.id,
+            code: zone.code,
+            name: zone.name,
+            campusName: zone.campusName,
+            buildingCount: zone.buildingCount,
+            totalPower: zone.totalPower,
+            avgPowerFactor: zone._powerFactorCount > 0 ? zone._powerFactorSum / zone._powerFactorCount : 0,
+            statusCounts: zone.statusCounts,
+        }))
+        .sort((a, b) => b.totalPower - a.totalPower);
+
+    const topBuildings = [...liveBuildings]
+        .sort((a, b) => b.power - a.power)
+        .slice(0, 6);
+
+    const totalBuildings = liveBuildings.length;
+    const liveCount = liveBuildings.filter((building) => building.isLive).length;
+    const avgPowerFactorReadings = liveBuildings.filter((building) => building.powerFactor > 0);
+    const avgPowerFactor = avgPowerFactorReadings.length > 0
+        ? avgPowerFactorReadings.reduce((sum, building) => sum + building.powerFactor, 0) / avgPowerFactorReadings.length
+        : 0;
+
+    const formatPower = (power: number) => {
+        if (power >= 1000) {
+            return `${(power / 1000).toFixed(2)} MW`;
+        }
+
+        return `${power.toFixed(1)} kW`;
+    };
 
     return (
         <div className="bg-[#040f2c] rounded-lg border border-[#173160] relative overflow-hidden shadow-[inset_0_0_0_1px_rgba(23,49,96,0.35)]">
-            <div className="absolute top-3 left-3 z-10 bg-[#0b1b47]/85 backdrop-blur-sm border border-[#355089]/70 rounded px-3 py-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#9cb5de] text-[17px]">map</span>
-                <span className="text-xs font-semibold text-[#d9e6ff] uppercase tracking-wider">
-                    Campus Map View
-                    <span className="ml-1 text-[#89a3cf]">Zone A</span>
-                </span>
-                {isConnected && (
-                    <span className="ml-1 flex items-center gap-1 text-[10px] text-[#20c997] font-semibold">
-                        <span className="size-1.5 rounded-full bg-[#20c997] animate-pulse"></span>
-                        Live
-                    </span>
-                )}
-            </div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(15,47,109,0.28)_0%,rgba(4,15,44,0)_40%),radial-gradient(circle_at_80%_0%,rgba(34,197,94,0.12)_0%,rgba(4,15,44,0)_30%)] pointer-events-none"></div>
 
-            {buildings.length > 0 && (
-                <div className="absolute top-3 right-3 z-10 bg-[#0b1b47]/85 backdrop-blur-sm border border-[#355089]/70 rounded px-2.5 py-1.5 flex items-center gap-3">
-                    {totalPower > 0 && (
-                        <div className="text-center px-2">
-                            <p className="text-xs font-mono font-bold text-[#e8f1ff]">
-                                {totalPower > 1000 ? `${(totalPower / 1000).toFixed(1)} MW` : `${totalPower.toFixed(1)} kW`}
-                            </p>
-                            <p className="text-[9px] uppercase text-[#8aa2c9] font-semibold">Total Load</p>
+            <div className="relative z-10 p-4 md:p-5 flex flex-col gap-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[#9cb5de] text-[17px]">domain</span>
+                            <span className="text-xs font-semibold text-[#d9e6ff] uppercase tracking-wider">Fleet Overview</span>
+                            {isConnected && (
+                                <span className="ml-1 flex items-center gap-1 text-[10px] text-[#20c997] font-semibold">
+                                    <span className="size-1.5 rounded-full bg-[#20c997] animate-pulse"></span>
+                                    Live
+                                </span>
+                            )}
                         </div>
-                    )}
-                    <div className="flex items-center gap-2 text-[10px]">
-                        {(statusCounts.operational || 0) > 0 && (
-                            <span className="flex items-center gap-1 text-[#20c997] font-semibold">
-                                <span className="size-1.5 rounded-full bg-[#20c997]"></span>
-                                {statusCounts.operational}
-                            </span>
-                        )}
-                        {(statusCounts.warning || 0) > 0 && (
-                            <span className="flex items-center gap-1 text-[#f59e0b] font-semibold">
-                                <span className="size-1.5 rounded-full bg-[#f59e0b]"></span>
-                                {statusCounts.warning}
-                            </span>
-                        )}
-                        {(statusCounts.critical || 0) > 0 && (
-                            <span className="flex items-center gap-1 text-[#ff5252] font-semibold">
-                                <span className="size-1.5 rounded-full bg-[#ff5252]"></span>
-                                {statusCounts.critical}
-                            </span>
-                        )}
-                        {(statusCounts.offline || 0) > 0 && (
-                            <span className="flex items-center gap-1 text-[#8aa2c9] font-semibold">
-                                <span className="size-1.5 rounded-full bg-[#8aa2c9]"></span>
-                                {statusCounts.offline}
-                            </span>
-                        )}
+                        <p className="mt-2 text-sm text-[#9db4da] max-w-2xl">
+                            Ringkasan gabungan seluruh bangunan, termasuk total beban, status realtime, dan zona yang paling aktif.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:min-w-[520px]">
+                        <div className="rounded-lg border border-[#355089]/60 bg-[#0b1b47]/80 px-3 py-2">
+                            <p className="text-[10px] uppercase text-[#8aa2c9] font-semibold">Buildings</p>
+                            <p className="text-xl font-mono font-bold text-[#f2f7ff]">{totalBuildings}</p>
+                        </div>
+                        <div className="rounded-lg border border-[#355089]/60 bg-[#0b1b47]/80 px-3 py-2">
+                            <p className="text-[10px] uppercase text-[#8aa2c9] font-semibold">Total Load</p>
+                            <p className="text-xl font-mono font-bold text-[#f2f7ff]">{formatPower(totalPower)}</p>
+                        </div>
+                        <div className="rounded-lg border border-[#355089]/60 bg-[#0b1b47]/80 px-3 py-2">
+                            <p className="text-[10px] uppercase text-[#8aa2c9] font-semibold">Avg PF</p>
+                            <p className="text-xl font-mono font-bold text-[#f2f7ff]">{avgPowerFactor > 0 ? avgPowerFactor.toFixed(2) : '--'}</p>
+                        </div>
+                        <div className="rounded-lg border border-[#355089]/60 bg-[#0b1b47]/80 px-3 py-2">
+                            <p className="text-[10px] uppercase text-[#8aa2c9] font-semibold">Live</p>
+                            <p className="text-xl font-mono font-bold text-[#f2f7ff]">{liveCount}/{totalBuildings}</p>
+                        </div>
+                        <div className="rounded-lg border border-[#355089]/60 bg-[#0b1b47]/80 px-3 py-2 sm:col-span-4">
+                            <p className="text-[10px] uppercase text-[#8aa2c9] font-semibold">Status Mix</p>
+                            <p className="text-sm font-semibold text-[#f2f7ff] mt-0.5">
+                                OK {statusCounts.operational} · Warn {statusCounts.warning} · Crit {statusCounts.critical} · Off {statusCounts.offline}
+                            </p>
+                        </div>
                     </div>
                 </div>
-            )}
 
-            <div className="absolute bottom-3 left-3 z-10">
-                <div className="bg-[#0b1b47]/88 backdrop-blur-sm border border-[#355089]/70 rounded px-3 py-2 text-[10px] text-[#c8d9f4] flex flex-col gap-1.5 min-w-40">
-                    <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-[#20c997]"></span>Normal</span>
-                    <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-[#f59e0b]"></span>Warning</span>
-                    <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-[#ff5252]"></span>Critical</span>
-                    <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-[#8aa2c9]"></span>Offline</span>
-                </div>
-            </div>
+                {buildings.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-[#355089]/70 bg-[#081735]/70 px-4 py-10 text-center text-[#9db4da]">
+                        Loading building information...
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        <section className="rounded-xl border border-[#355089]/60 bg-[#081735]/75 p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-[#d9e6ff] flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[16px]">layers</span>
+                                    Zone Breakdown
+                                </h3>
+                                <span className="text-[10px] text-[#8aa2c9]">Campus + zone aggregation</span>
+                            </div>
 
-            <div className="w-full h-[680px] md:h-[700px] flex items-center justify-center bg-[radial-gradient(circle_at_30%_20%,#0b2358_0%,#040f2c_55%,#040b1f_100%)]">
-                <svg className="w-full h-full" fill="none" viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <pattern id="grid" width="46" height="46" patternUnits="userSpaceOnUse">
-                            <path d="M 46 0 L 0 0 0 46" fill="none" stroke="#1f3b72" strokeOpacity="0.5" strokeWidth="1"></path>
-                        </pattern>
-                        <pattern id="grid-major" width="230" height="230" patternUnits="userSpaceOnUse">
-                            <path d="M 230 0 L 0 0 0 230" fill="none" stroke="#365ea5" strokeOpacity="0.35" strokeWidth="1.2"></path>
-                        </pattern>
-                    </defs>
+                            <div className="space-y-2.5 max-h-[330px] overflow-y-auto pr-1">
+                                {zones.map((zone) => {
+                                    const hasIssue = zone.statusCounts.critical > 0 || zone.statusCounts.warning > 0;
+                                    const tone: MapBuilding['status'] = hasIssue ? (zone.statusCounts.critical > 0 ? 'critical' : 'warning') : 'operational';
+                                    const palette = statusPalette[tone];
 
-                    <rect width="1000" height="620" fill="url(#grid)"></rect>
-                    <rect width="1000" height="620" fill="url(#grid-major)"></rect>
-
-                    {buildings.length === 0 ? (
-                        <text x="500" y="310" textAnchor="middle" className="fill-[#9bb2d8] text-sm">Loading buildings...</text>
-                    ) : (
-                        <>
-                            {buildings.slice(1).map((building, i) => {
-                                const from = getPos(buildings[i], i);
-                                const to = getPos(building, i + 1);
-                                return (
-                                    <line
-                                        key={`line-${building.id}`}
-                                        x1={from.x + from.width / 2}
-                                        y1={from.y + from.height / 2}
-                                        x2={to.x + to.width / 2}
-                                        y2={to.y + to.height / 2}
-                                        stroke="#5d7eb5"
-                                        strokeOpacity="0.45"
-                                        strokeDasharray="7 7"
-                                        strokeWidth="2"
-                                    />
-                                );
-                            })}
-
-                            {buildings.map((building, i) => {
-                                const pos = getPos(building, i);
-                                const liveStatus = getBuildingStatus(building);
-                                const palette = statusPalette[liveStatus];
-                                const cx = pos.x + pos.width / 2;
-                                const cy = pos.y + pos.height / 2;
-                                const live = getBuildingData(building.code);
-                                const isHovered = hoveredBuilding === building.id;
-
-                                return (
-                                    <g
-                                        key={building.id}
-                                        className="building-group cursor-pointer"
-                                        onClick={() => navigate(`/building/${building.id}`)}
-                                        onMouseEnter={() => setHoveredBuilding(building.id)}
-                                        onMouseLeave={() => setHoveredBuilding(null)}
-                                    >
-                                        {liveStatus === 'critical' ? (
-                                            <polygon
-                                                points={`${pos.x + 16},${pos.y} ${pos.x + pos.width - 16},${pos.y} ${pos.x + pos.width},${pos.y + pos.height} ${pos.x},${pos.y + pos.height}`}
-                                                fill="#364762"
-                                                stroke={palette.stroke}
-                                                strokeWidth="3"
-                                            />
-                                        ) : (
-                                            <rect
-                                                className="building-path"
-                                                x={pos.x}
-                                                y={pos.y}
-                                                width={pos.width}
-                                                height={pos.height}
-                                                fill="#364762"
-                                                stroke={palette.stroke}
-                                                rx="2"
-                                                strokeWidth={liveStatus === 'warning' ? 3 : 2}
-                                            />
-                                        )}
-
-                                        {liveStatus === 'critical' && (
-                                            <circle className="animate-ping opacity-55" cx={cx} cy={cy} r="6" fill="#ff5252" />
-                                        )}
-                                        <circle
-                                            className={palette.pulse ? 'animate-pulse' : ''}
-                                            cx={cx}
-                                            cy={cy}
-                                            r="5"
-                                            fill={palette.dot}
-                                        />
-
-                                        <text
-                                            className="font-mono text-[14px] font-semibold"
-                                            textAnchor="middle"
-                                            x={cx}
-                                            y={pos.y + pos.height + 22}
-                                            fill={palette.label}
+                                    return (
+                                        <button
+                                            key={zone.id}
+                                            type="button"
+                                            onClick={() => navigate('/monitoring')}
+                                            className="w-full text-left rounded-lg border px-3 py-3 transition-colors hover:brightness-110"
+                                            style={{ background: palette.bg, borderColor: palette.border }}
                                         >
-                                            {(building.code || building.name).toUpperCase()}
-                                        </text>
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="size-2 rounded-full" style={{ backgroundColor: palette.dot }}></span>
+                                                        <p className="text-sm font-semibold text-[#f3f8ff]">{zone.name}</p>
+                                                    </div>
+                                                    <p className="text-[10px] text-[#94afd8] mt-1">{zone.campusName} • {zone.buildingCount} buildings • Zone {zone.code}</p>
+                                                </div>
 
-                                        {live && live.power > 0 && (
-                                            <text
-                                                className="text-[11px] font-mono"
-                                                textAnchor="middle"
-                                                x={cx}
-                                                y={cy + 18}
-                                                fill="#9fb5da"
-                                            >
-                                                {live.power.toFixed(1)} kW
-                                            </text>
-                                        )}
+                                                <div className="text-right">
+                                                    <p className="text-sm font-mono font-bold text-[#f3f8ff]">{formatPower(zone.totalPower)}</p>
+                                                    <p className="text-[10px] text-[#9cb5de]">PF {zone.avgPowerFactor > 0 ? zone.avgPowerFactor.toFixed(2) : '--'}</p>
+                                                </div>
+                                            </div>
 
-                                        {isHovered && live && (
-                                            <g>
-                                                <rect
-                                                    x={cx + 16}
-                                                    y={cy - 35}
-                                                    width="130"
-                                                    height="56"
-                                                    rx="3"
-                                                    fill="#081734"
-                                                    stroke={liveStatus === 'critical' ? '#ef4444' : liveStatus === 'warning' ? '#f59e0b' : '#365ea5'}
-                                                    strokeWidth="1"
-                                                    opacity="0.95"
-                                                />
-                                                <text x={cx + 24} y={cy - 19} className="fill-[#f5f8ff] text-[9px] font-bold">
-                                                    {building.name}
-                                                </text>
-                                                <text x={cx + 24} y={cy - 5} className="fill-[#bacceb] text-[8px] font-mono">
-                                                    {live.power.toFixed(1)} kW | PF {live.powerFactor.toFixed(2)}
-                                                </text>
-                                                <text x={cx + 24} y={cy + 8} className="fill-[#bacceb] text-[8px] font-mono">
-                                                    V: {live.voltage.toFixed(0)}V
-                                                </text>
-                                                <text x={cx + 24} y={cy + 19} className="fill-[#86a3cf] text-[7px] uppercase">
-                                                    {building.zoneName || ''}
-                                                </text>
-                                            </g>
-                                        )}
-                                    </g>
-                                );
-                            })}
-                        </>
-                    )}
-                </svg>
-            </div>
+                                            <div className="mt-2 flex items-center gap-2 text-[10px] text-[#cddcf4] flex-wrap">
+                                                <span className="rounded-full bg-[#0b1b47]/75 px-2 py-0.5">OK {zone.statusCounts.operational}</span>
+                                                <span className="rounded-full bg-[#0b1b47]/75 px-2 py-0.5">Warn {zone.statusCounts.warning}</span>
+                                                <span className="rounded-full bg-[#0b1b47]/75 px-2 py-0.5">Crit {zone.statusCounts.critical}</span>
+                                                <span className="rounded-full bg-[#0b1b47]/75 px-2 py-0.5">Off {zone.statusCounts.offline}</span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </section>
 
-            {buildings.length > 0 && (
-                <div className="absolute bottom-3 right-3 z-10 bg-[#0b1b47]/70 backdrop-blur-sm rounded px-2 py-1 text-[10px] text-[#9db4da] flex items-center gap-1 border border-[#355089]/60">
-                    <span className="material-symbols-outlined text-[12px]">touch_app</span>
-                    Klik gedung untuk buka detail
+                        <section className="rounded-xl border border-[#355089]/60 bg-[#081735]/75 p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-[#d9e6ff] flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-[16px]">electric_meter</span>
+                                    Top Buildings
+                                </h3>
+                                <span className="text-[10px] text-[#8aa2c9]">Sorted by realtime power</span>
+                            </div>
+
+                            <div className="space-y-2.5 max-h-[330px] overflow-y-auto pr-1">
+                                {topBuildings.map((building) => {
+                                    const palette = statusPalette[building.liveStatus];
+
+                                    return (
+                                        <button
+                                            key={building.id}
+                                            type="button"
+                                            onClick={() => handleBuildingClick(building.id)}
+                                            className="w-full text-left rounded-lg border px-3 py-3 transition-colors hover:brightness-110"
+                                            style={{ background: palette.bg, borderColor: palette.border }}
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="size-2 rounded-full mt-1.5" style={{ backgroundColor: palette.dot }}></span>
+                                                        <p className="text-sm font-semibold text-[#f3f8ff] truncate">{building.code} • {building.name}</p>
+                                                    </div>
+                                                    <p className="text-[10px] text-[#94afd8] mt-1 truncate">{building.campusName} • {building.zoneName}</p>
+                                                </div>
+
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-sm font-mono font-bold text-[#f3f8ff]">{formatPower(building.power)}</p>
+                                                    <p className="text-[10px] text-[#9cb5de]">PF {building.powerFactor > 0 ? building.powerFactor.toFixed(2) : '--'}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-[#cddcf4]">
+                                                <span className="rounded-full bg-[#0b1b47]/75 px-2 py-0.5 uppercase">{building.liveStatus}</span>
+                                                <span className="text-[#8aa2c9]">Open detail</span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    </div>
+                )}
+
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#355089]/55 bg-[#0b1b47]/70 px-3 py-2 text-[10px] text-[#9db4da]">
+                    <span className="flex items-center gap-2 flex-wrap">
+                        <span className="size-2 rounded-full bg-[#20c997]"></span>
+                        Operational
+                        <span className="size-2 rounded-full bg-[#f59e0b] ml-2"></span>
+                        Warning
+                        <span className="size-2 rounded-full bg-[#ff5252] ml-2"></span>
+                        Critical
+                        <span className="size-2 rounded-full bg-[#8aa2c9] ml-2"></span>
+                        Offline
+                    </span>
+
+                    <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">touch_app</span>
+                        Klik building untuk buka detail
+                    </span>
                 </div>
-            )}
-
-            <style>{`
-                .building-path { transition: all 0.25s ease; }
-                .building-group:hover .building-path { filter: brightness(1.13); }
-            `}</style>
+            </div>
         </div>
     );
 }

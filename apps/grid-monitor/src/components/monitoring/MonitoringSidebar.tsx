@@ -48,6 +48,8 @@ export function MonitoringSidebar({ selectedZone, onZoneSelect }: MonitoringSide
                         }
                     }
                 }
+                // Sort zones by code (A, B, C, etc.)
+                allZones.sort((a, b) => a.code.localeCompare(b.code));
                 setZones(allZones);
             }
         } catch (err) {

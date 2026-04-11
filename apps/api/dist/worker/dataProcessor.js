@@ -230,13 +230,14 @@ class DataProcessor {
                 }
             }
             // Create alert in database
-            const [newAlert] = await database_1.db.insert(schema_1.alerts).values({
+            const result = await database_1.db.insert(schema_1.alerts).values({
                 panelId: panelId || null,
                 severity: anomaly.severity,
                 title: `${anomaly.type.replace('_', ' ').toUpperCase()} Alert`,
                 message: anomaly.message,
                 status: 'active',
-            }).returning();
+            }).$returningId();
+            const [newAlert] = await database_1.db.select().from(schema_1.alerts).where((0, drizzle_orm_1.eq)(schema_1.alerts.id, result[0].id));
             // Broadcast alert via Socket.io
             const alertPayload = {
                 id: newAlert.id,

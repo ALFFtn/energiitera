@@ -5,13 +5,14 @@ import { AppError } from '../middleware/errorHandler.js';
 
 export class ReadingService {
     async submitReading(data: NewPanelReading) {
-        const [reading] = await db.insert(panelReadings).values(data).returning();
+        const result = await db.insert(panelReadings).values(data).$returningId();
+        const [reading] = await db.select().from(panelReadings).where(eq(panelReadings.id, result[0].id));
         return reading;
     }
 
     async submitBulkReadings(readings: NewPanelReading[]) {
-        const inserted = await db.insert(panelReadings).values(readings).returning();
-        return inserted;
+        await db.insert(panelReadings).values(readings);
+        return readings;
     }
 
     // Grid-wide metrics
@@ -37,7 +38,8 @@ export class ReadingService {
     }
 
     async submitGridMetric(data: NewGridMetric) {
-        const [metric] = await db.insert(gridMetrics).values(data).returning();
+        const result = await db.insert(gridMetrics).values(data).$returningId();
+        const [metric] = await db.select().from(gridMetrics).where(eq(gridMetrics.id, result[0].id));
         return metric;
     }
 

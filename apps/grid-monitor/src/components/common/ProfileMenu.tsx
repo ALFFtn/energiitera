@@ -10,8 +10,10 @@ export function ProfileMenu() {
     const toggleMenu = () => setIsOpen(!isOpen);
 
     const handleLogout = () => {
-        // In a real app, clear auth tokens here
-        navigate('/login');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        navigate('/');
     };
 
     useEffect(() => {

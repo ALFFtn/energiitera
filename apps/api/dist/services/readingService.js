@@ -6,12 +6,13 @@ const database_js_1 = require("../config/database.js");
 const index_js_1 = require("../db/schema/index.js");
 class ReadingService {
     async submitReading(data) {
-        const [reading] = await database_js_1.db.insert(index_js_1.panelReadings).values(data).returning();
+        const result = await database_js_1.db.insert(index_js_1.panelReadings).values(data).$returningId();
+        const [reading] = await database_js_1.db.select().from(index_js_1.panelReadings).where((0, drizzle_orm_1.eq)(index_js_1.panelReadings.id, result[0].id));
         return reading;
     }
     async submitBulkReadings(readings) {
-        const inserted = await database_js_1.db.insert(index_js_1.panelReadings).values(readings).returning();
-        return inserted;
+        await database_js_1.db.insert(index_js_1.panelReadings).values(readings);
+        return readings;
     }
     // Grid-wide metrics
     async getLatestGridMetrics(campusId) {
@@ -33,7 +34,8 @@ class ReadingService {
         return metric;
     }
     async submitGridMetric(data) {
-        const [metric] = await database_js_1.db.insert(index_js_1.gridMetrics).values(data).returning();
+        const result = await database_js_1.db.insert(index_js_1.gridMetrics).values(data).$returningId();
+        const [metric] = await database_js_1.db.select().from(index_js_1.gridMetrics).where((0, drizzle_orm_1.eq)(index_js_1.gridMetrics.id, result[0].id));
         return metric;
     }
     // Get 24h power distribution data

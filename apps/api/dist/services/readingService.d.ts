@@ -19,22 +19,22 @@ export declare class ReadingService {
         thdPercentage: string | null;
     }>;
     submitBulkReadings(readings: NewPanelReading[]): Promise<{
-        id: string;
         panelId: string;
-        timestamp: Date;
-        voltageLn: string | null;
-        voltageLnMin: string | null;
-        voltageLnMax: string | null;
-        currentTotal: string | null;
-        currentPhaseA: string | null;
-        currentPhaseB: string | null;
-        currentPhaseC: string | null;
-        powerFactor: string | null;
-        frequency: string | null;
-        powerKw: string | null;
-        energyKwh: string | null;
-        signalQuality: number | null;
-        thdPercentage: string | null;
+        id?: string | undefined;
+        timestamp?: Date | undefined;
+        voltageLn?: string | null | undefined;
+        voltageLnMin?: string | null | undefined;
+        voltageLnMax?: string | null | undefined;
+        currentTotal?: string | null | undefined;
+        currentPhaseA?: string | null | undefined;
+        currentPhaseB?: string | null | undefined;
+        currentPhaseC?: string | null | undefined;
+        powerFactor?: string | null | undefined;
+        frequency?: string | null | undefined;
+        powerKw?: string | null | undefined;
+        energyKwh?: string | null | undefined;
+        signalQuality?: number | null | undefined;
+        thdPercentage?: string | null | undefined;
     }[]>;
     getLatestGridMetrics(campusId: string): Promise<{
         id: string;

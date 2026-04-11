@@ -15,16 +15,9 @@ export class AlertService {
             conditions.push(eq(alerts.severity, severity));
         }
 
-        const alertsList = await db.query.alerts.findMany({
-            where: conditions.length > 0 ? and(...conditions) : undefined,
-            orderBy: [desc(alerts.triggeredAt)],
-            limit,
-            with: {
-                panel: true,
-                building: true,
-                acknowledgedByUser: true,
-            },
-        });
+        const alertsList = await db.select().from(alerts).where(
+            conditions.length > 0 ? and(...conditions) : undefined
+        ).orderBy(desc(alerts.triggeredAt)).limit(limit);
 
         return alertsList;
     }
@@ -53,37 +46,32 @@ export class AlertService {
     }
 
     async getAlertById(id: string) {
-        const alert = await db.query.alerts.findFirst({
-            where: eq(alerts.id, id),
-            with: {
-                panel: true,
-                building: true,
-                acknowledgedByUser: true,
-            },
-        });
+        const alert = await db.select().from(alerts).where(eq(alerts.id, id));
 
-        if (!alert) {
+        if (!alert[0]) {
             throw new AppError('Alert not found', 404);
         }
 
-        return alert;
+        return alert[0];
     }
 
     async createAlert(data: NewAlert) {
-        const [alert] = await db.insert(alerts).values(data).returning();
+        const result = await db.insert(alerts).values(data).$returningId();
+        const [alert] = await db.select().from(alerts).where(eq(alerts.id, result[0].id));
         return alert;
     }
 
     async acknowledgeAlert(id: string, userId: string) {
-        const [updated] = await db
+        await db
             .update(alerts)
             .set({
                 status: 'acknowledged',
                 acknowledgedBy: userId,
                 acknowledgedAt: new Date(),
             })
-            .where(eq(alerts.id, id))
-            .returning();
+            .where(eq(alerts.id, id));
+
+        const [updated] = await db.select().from(alerts).where(eq(alerts.id, id));
 
         if (!updated) {
             throw new AppError('Alert not found', 404);
@@ -93,14 +81,15 @@ export class AlertService {
     }
 
     async resolveAlert(id: string) {
-        const [updated] = await db
+        await db
             .update(alerts)
             .set({
                 status: 'resolved',
                 resolvedAt: new Date(),
             })
-            .where(eq(alerts.id, id))
-            .returning();
+            .where(eq(alerts.id, id));
+
+        const [updated] = await db.select().from(alerts).where(eq(alerts.id, id));
 
         if (!updated) {
             throw new AppError('Alert not found', 404);

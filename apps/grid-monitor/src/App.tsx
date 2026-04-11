@@ -13,9 +13,9 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<CommandCenter />} />
 
         {/* Protected routes */}
-        <Route path="/" element={<AuthGuard><CommandCenter /></AuthGuard>} />
         <Route path="/analytics" element={<AuthGuard><AnalyticsDashboard /></AuthGuard>} />
         <Route path="/monitoring" element={<AuthGuard><Monitoring /></AuthGuard>} />
         <Route path="/building/:buildingId" element={<AuthGuard><BuildingDetail /></AuthGuard>} />

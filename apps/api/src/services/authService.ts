@@ -22,7 +22,7 @@ export class AuthService {
         const passwordHash = await bcrypt.hash(data.password, 12);
 
         // Create user
-        const [user] = await db
+        const result = await db
             .insert(users)
             .values({
                 email: data.email,
@@ -30,7 +30,9 @@ export class AuthService {
                 name: data.name,
                 role: data.role || 'operator',
             })
-            .returning();
+            .$returningId();
+
+        const [user] = await db.select().from(users).where(eq(users.id, result[0].id));
 
         return {
             id: user.id,

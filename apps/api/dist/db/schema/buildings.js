@@ -1,34 +1,38 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.buildingsRelations = exports.zonesRelations = exports.campusesRelations = exports.buildings = exports.zones = exports.campuses = void 0;
-const pg_core_1 = require("drizzle-orm/pg-core");
+const mysql_core_1 = require("drizzle-orm/mysql-core");
 const drizzle_orm_1 = require("drizzle-orm");
-exports.campuses = (0, pg_core_1.pgTable)('campuses', {
-    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
-    name: (0, pg_core_1.varchar)('name', { length: 100 }).notNull(),
-    location: (0, pg_core_1.varchar)('location', { length: 255 }),
-    timezone: (0, pg_core_1.varchar)('timezone', { length: 50 }).notNull().default('UTC'),
-    createdAt: (0, pg_core_1.timestamp)('created_at').notNull().defaultNow(),
+const crypto_1 = __importDefault(require("crypto"));
+exports.campuses = (0, mysql_core_1.mysqlTable)('campuses', {
+    id: (0, mysql_core_1.varchar)('id', { length: 36 }).primaryKey().$defaultFn(() => crypto_1.default.randomUUID()),
+    name: (0, mysql_core_1.varchar)('name', { length: 100 }).notNull(),
+    location: (0, mysql_core_1.varchar)('location', { length: 255 }),
+    timezone: (0, mysql_core_1.varchar)('timezone', { length: 50 }).notNull().default('UTC'),
+    createdAt: (0, mysql_core_1.timestamp)('created_at').notNull().defaultNow(),
 });
-exports.zones = (0, pg_core_1.pgTable)('zones', {
-    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
-    campusId: (0, pg_core_1.uuid)('campus_id').notNull().references(() => exports.campuses.id, { onDelete: 'cascade' }),
-    code: (0, pg_core_1.varchar)('code', { length: 10 }).notNull(),
-    name: (0, pg_core_1.varchar)('name', { length: 100 }).notNull(),
-    status: (0, pg_core_1.varchar)('status', { length: 20 }).notNull().default('normal'),
-    createdAt: (0, pg_core_1.timestamp)('created_at').notNull().defaultNow(),
+exports.zones = (0, mysql_core_1.mysqlTable)('zones', {
+    id: (0, mysql_core_1.varchar)('id', { length: 36 }).primaryKey().$defaultFn(() => crypto_1.default.randomUUID()),
+    campusId: (0, mysql_core_1.varchar)('campus_id', { length: 36 }).notNull().references(() => exports.campuses.id, { onDelete: 'cascade' }),
+    code: (0, mysql_core_1.varchar)('code', { length: 10 }).notNull(),
+    name: (0, mysql_core_1.varchar)('name', { length: 100 }).notNull(),
+    status: (0, mysql_core_1.varchar)('status', { length: 20 }).notNull().default('normal'),
+    createdAt: (0, mysql_core_1.timestamp)('created_at').notNull().defaultNow(),
 });
-exports.buildings = (0, pg_core_1.pgTable)('buildings', {
-    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
-    zoneId: (0, pg_core_1.uuid)('zone_id').notNull().references(() => exports.zones.id, { onDelete: 'cascade' }),
-    code: (0, pg_core_1.varchar)('code', { length: 20 }).notNull(),
-    name: (0, pg_core_1.varchar)('name', { length: 100 }).notNull(),
-    description: (0, pg_core_1.text)('description'),
-    status: (0, pg_core_1.varchar)('status', { length: 20 }).notNull().default('operational'),
-    gridConnection: (0, pg_core_1.varchar)('grid_connection', { length: 50 }).notNull().default('primary'),
-    lastSyncAt: (0, pg_core_1.timestamp)('last_sync_at'),
-    mapCoordinates: (0, pg_core_1.jsonb)('map_coordinates'),
-    createdAt: (0, pg_core_1.timestamp)('created_at').notNull().defaultNow(),
+exports.buildings = (0, mysql_core_1.mysqlTable)('buildings', {
+    id: (0, mysql_core_1.varchar)('id', { length: 36 }).primaryKey().$defaultFn(() => crypto_1.default.randomUUID()),
+    zoneId: (0, mysql_core_1.varchar)('zone_id', { length: 36 }).notNull().references(() => exports.zones.id, { onDelete: 'cascade' }),
+    code: (0, mysql_core_1.varchar)('code', { length: 20 }).notNull(),
+    name: (0, mysql_core_1.varchar)('name', { length: 100 }).notNull(),
+    description: (0, mysql_core_1.text)('description'),
+    status: (0, mysql_core_1.varchar)('status', { length: 20 }).notNull().default('operational'),
+    gridConnection: (0, mysql_core_1.varchar)('grid_connection', { length: 50 }).notNull().default('primary'),
+    lastSyncAt: (0, mysql_core_1.timestamp)('last_sync_at'),
+    mapCoordinates: (0, mysql_core_1.json)('map_coordinates'),
+    createdAt: (0, mysql_core_1.timestamp)('created_at').notNull().defaultNow(),
 });
 // Relations
 exports.campusesRelations = (0, drizzle_orm_1.relations)(exports.campuses, ({ many }) => ({

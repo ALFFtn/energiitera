@@ -6,109 +6,125 @@ import { AppError } from '../middleware/errorHandler.js';
 export class BuildingService {
     // Campuses
     async getAllCampuses() {
-        return db.query.campuses.findMany({
-            with: {
-                zones: {
-                    with: {
-                        buildings: true,
-                    },
-                },
-            },
-        });
+        const allCampuses = await db.select().from(campuses);
+        const allZones = await db.select().from(zones);
+        const allBuildings = await db.select().from(buildings);
+
+        return allCampuses.map((campus) => ({
+            ...campus,
+            zones: allZones
+                .filter((zone) => zone.campusId === campus.id)
+                .map((zone) => ({
+                    ...zone,
+                    buildings: allBuildings.filter((building) => building.zoneId === zone.id),
+                })),
+        }));
     }
 
     async getCampusById(id: string) {
-        const campus = await db.query.campuses.findFirst({
-            where: eq(campuses.id, id),
-            with: {
-                zones: {
-                    with: {
-                        buildings: true,
-                    },
-                },
-            },
-        });
+        const campus = await db.select().from(campuses).where(eq(campuses.id, id));
 
-        if (!campus) {
+        if (!campus[0]) {
             throw new AppError('Campus not found', 404);
         }
 
-        return campus;
+        const allZones = await db.select().from(zones).where(eq(zones.campusId, id));
+        const allBuildings = await db.select().from(buildings);
+
+        return {
+            ...campus[0],
+            zones: allZones.map((zone) => ({
+                ...zone,
+                buildings: allBuildings.filter((building) => building.zoneId === zone.id),
+            })),
+        };
     }
 
     // Zones
     async getZonesByCampus(campusId: string) {
-        return db.query.zones.findMany({
-            where: eq(zones.campusId, campusId),
-            with: {
-                buildings: true,
-            },
-        });
+        const zoneList = await db.select().from(zones).where(eq(zones.campusId, campusId));
+        const allBuildings = await db.select().from(buildings);
+
+        return zoneList.map((zone) => ({
+            ...zone,
+            buildings: allBuildings.filter((building) => building.zoneId === zone.id),
+        }));
     }
 
     async getZoneById(id: string) {
-        const zone = await db.query.zones.findFirst({
-            where: eq(zones.id, id),
-            with: {
-                campus: true,
-                buildings: true,
-            },
-        });
+        const zone = await db.select().from(zones).where(eq(zones.id, id));
 
-        if (!zone) {
+        if (!zone[0]) {
             throw new AppError('Zone not found', 404);
         }
 
-        return zone;
+        const [campus] = await db.select().from(campuses).where(eq(campuses.id, zone[0].campusId));
+        const zoneBuildings = await db.select().from(buildings).where(eq(buildings.zoneId, id));
+
+        return {
+            ...zone[0],
+            campus,
+            buildings: zoneBuildings,
+        };
     }
 
     // Buildings
     async getAllBuildings() {
-        return db.query.buildings.findMany({
-            with: {
-                zone: {
-                    with: {
-                        campus: true,
-                    },
-                },
-            },
+        const allBuildings = await db.select().from(buildings);
+        const allZones = await db.select().from(zones);
+        const allCampuses = await db.select().from(campuses);
+
+        return allBuildings.map((building) => {
+            const zone = allZones.find((item) => item.id === building.zoneId) || null;
+            const campus = zone ? allCampuses.find((item) => item.id === zone.campusId) || null : null;
+
+            return {
+                ...building,
+                zone: zone
+                    ? {
+                        ...zone,
+                        campus,
+                    }
+                    : null,
+            };
         });
     }
 
     async getBuildingsByZone(zoneId: string) {
-        return db.query.buildings.findMany({
-            where: eq(buildings.zoneId, zoneId),
-        });
+        return db.select().from(buildings).where(eq(buildings.zoneId, zoneId));
     }
 
     async getBuildingById(id: string) {
-        const building = await db.query.buildings.findFirst({
-            where: eq(buildings.id, id),
-            with: {
-                zone: {
-                    with: {
-                        campus: true,
-                    },
-                },
-            },
-        });
+        const building = await db.select().from(buildings).where(eq(buildings.id, id));
 
-        if (!building) {
+        if (!building[0]) {
             throw new AppError('Building not found', 404);
         }
 
-        return building;
+        const [zone] = await db.select().from(zones).where(eq(zones.id, building[0].zoneId));
+        const [campus] = zone ? await db.select().from(campuses).where(eq(campuses.id, zone.campusId)) : [];
+
+        return {
+            ...building[0],
+            zone: zone
+                ? {
+                    ...zone,
+                    campus,
+                }
+                : null,
+        };
     }
 
     async updateBuilding(id: string, data: Partial<NewBuilding>) {
-        const [updated] = await db
+        await db
             .update(buildings)
             .set({
                 ...data,
                 lastSyncAt: new Date(),
             })
-            .where(eq(buildings.id, id))
-            .returning();
+            .where(eq(buildings.id, id));
+
+        const [updated] = await db.select().from(buildings).where(eq(buildings.id, id));
 
         if (!updated) {
             throw new AppError('Building not found', 404);
@@ -126,72 +142,71 @@ export class BuildingService {
         gridConnection?: string;
         mapCoordinates?: object;
     }) {
-        // Verify zone exists and get zone code
-        const zone = await db.query.zones.findFirst({
-            where: eq(zones.id, data.zoneId),
-            with: {
-                campus: true,
-            },
-        });
-
-        if (!zone) {
+        // Verify zone exists
+        const zoneList = await db.select().from(zones).where(eq(zones.id, data.zoneId));
+        
+        if (!zoneList[0]) {
             throw new AppError('Zone not found', 404);
         }
 
+        const zone = zoneList[0];
+        
+        // Get campus if zone exists
+        const [campus] = await db.select().from(campuses).where(eq(campuses.id, zone.campusId));
+
         // Create building
-        const [newBuilding] = await db.insert(buildings).values({
+        const result = await db.insert(buildings).values({
             zoneId: data.zoneId,
             name: data.name,
             code: data.code,
             description: data.description,
             gridConnection: data.gridConnection || 'primary',
             mapCoordinates: data.mapCoordinates,
-        }).returning();
+        }).$returningId();
+
+        const [newBuilding] = await db.select().from(buildings).where(eq(buildings.id, result[0].id));
 
         return {
             ...newBuilding,
-            zone,
+            zone: {
+                ...zone,
+                campus,
+            },
         };
     }
 
     // Delete building
     async deleteBuilding(id: string) {
-        const [deleted] = await db
-            .delete(buildings)
-            .where(eq(buildings.id, id))
-            .returning();
+        const [existing] = await db.select().from(buildings).where(eq(buildings.id, id));
 
-        if (!deleted) {
+        if (!existing) {
             throw new AppError('Building not found', 404);
         }
 
-        return deleted;
+        await db.delete(buildings).where(eq(buildings.id, id));
+
+        return existing;
     }
 
     // Get buildings with their status for map display
     async getBuildingsMapData(zoneId?: string) {
-        const query = zoneId
-            ? db.query.buildings.findMany({
-                where: eq(buildings.zoneId, zoneId),
-                columns: {
-                    id: true,
-                    code: true,
-                    name: true,
-                    status: true,
-                    mapCoordinates: true,
-                },
-            })
-            : db.query.buildings.findMany({
-                columns: {
-                    id: true,
-                    code: true,
-                    name: true,
-                    status: true,
-                    mapCoordinates: true,
-                },
-            });
+        const allBuildings = zoneId
+            ? await db.select({
+                id: buildings.id,
+                code: buildings.code,
+                name: buildings.name,
+                status: buildings.status,
+                mapCoordinates: buildings.mapCoordinates,
+            }).from(buildings).where(eq(buildings.zoneId, zoneId))
+            : await db.select({
+                id: buildings.id,
+                code: buildings.code,
+                name: buildings.name,
+                status: buildings.status,
+                mapCoordinates: buildings.mapCoordinates,
+            }).from(buildings);
 
-        return query;
+        return allBuildings;
     }
 }
 

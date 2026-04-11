@@ -11,40 +11,30 @@ export class PanelService {
     }
 
     async getPanelById(id: string) {
-        const panel = await db.query.panels.findFirst({
-            where: eq(panels.id, id),
-            with: {
-                building: {
-                    with: {
-                        zone: true,
-                    },
-                },
-                thresholds: true,
-            },
-        });
+        const panelList = await db.select().from(panels).where(eq(panels.id, id));
 
-        if (!panel) {
+        if (!panelList[0]) {
             throw new AppError('Panel not found', 404);
         }
 
+        const panel = panelList[0];
+
         // Get latest reading
-        const latestReading = await db.query.panelReadings.findFirst({
-            where: eq(panelReadings.panelId, id),
-            orderBy: [desc(panelReadings.timestamp)],
-        });
+        const latestReadingList = await db.select().from(panelReadings).where(eq(panelReadings.panelId, id)).orderBy(desc(panelReadings.timestamp)).limit(1);
 
         return {
             ...panel,
-            latestReading,
+            latestReading: latestReadingList[0] || null,
         };
     }
 
     async updatePanel(id: string, data: Partial<NewPanel>) {
-        const [updated] = await db
+        await db
             .update(panels)
             .set(data)
-            .where(eq(panels.id, id))
-            .returning();
+            .where(eq(panels.id, id));
+
+        const [updated] = await db.select().from(panels).where(eq(panels.id, id));
 
         if (!updated) {
             throw new AppError('Panel not found', 404);
@@ -96,7 +86,8 @@ export class PanelService {
     }
 
     async createEvent(data: NewPanelEvent) {
-        const [event] = await db.insert(panelEvents).values(data).returning();
+        const result = await db.insert(panelEvents).values(data).$returningId();
+        const [event] = await db.select().from(panelEvents).where(eq(panelEvents.id, result[0].id));
         return event;
     }
 
@@ -117,18 +108,19 @@ export class PanelService {
         });
 
         if (existing) {
-            const [updated] = await db
+            await db
                 .update(alertThresholds)
                 .set(data)
-                .where(eq(alertThresholds.id, existing.id))
-                .returning();
+                .where(eq(alertThresholds.id, existing.id));
+            const [updated] = await db.select().from(alertThresholds).where(eq(alertThresholds.id, existing.id));
             return updated;
         }
 
-        const [created] = await db
+        const result = await db
             .insert(alertThresholds)
             .values({ ...data, panelId })
-            .returning();
+            .$returningId();
+        const [created] = await db.select().from(alertThresholds).where(eq(alertThresholds.id, result[0].id));
         return created;
     }
 

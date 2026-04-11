@@ -271,13 +271,15 @@ export class DataProcessor {
             }
 
             // Create alert in database
-            const [newAlert] = await db.insert(alerts).values({
+            const result = await db.insert(alerts).values({
                 panelId: panelId || null,
                 severity: anomaly.severity,
                 title: `${anomaly.type.replace('_', ' ').toUpperCase()} Alert`,
                 message: anomaly.message,
                 status: 'active',
-            }).returning();
+            }).$returningId();
+
+            const [newAlert] = await db.select().from(alerts).where(eq(alerts.id, result[0].id));
 
             // Broadcast alert via Socket.io
             const alertPayload: AlertPayload = {
