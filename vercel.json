@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm ci",
-  "buildCommand": "npm run build --workspace=apps/grid-monitor",
+  "installCommand": "npm ci --include=dev",
+  "buildCommand": "npm --prefix apps/grid-monitor run build",
   "outputDirectory": "apps/grid-monitor/dist",
   "rewrites": [
     {
