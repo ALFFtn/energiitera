@@ -25,6 +25,36 @@ interface UseBuildingSensorOptions {
     buildingId?: string;  // Used to fetch initial data from DB
 }
 
+function parseMaybeNumber(value: unknown): number | undefined {
+    if (value === null || value === undefined || value === '') return undefined;
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function getBuildingSensorCacheKey(buildingId?: string, buildingCode?: string): string | null {
+    if (buildingId) return `building-sensor:${buildingId}`;
+    if (buildingCode) return `building-sensor:${buildingCode.toLowerCase()}`;
+    return null;
+}
+
+function normalizeSensorReadings(readings: Record<string, unknown>): Partial<SensorData> {
+    return {
+        voltage_r: parseMaybeNumber(readings.voltage_r ?? readings.voltageR),
+        voltage_s: parseMaybeNumber(readings.voltage_s ?? readings.voltageS),
+        voltage_t: parseMaybeNumber(readings.voltage_t ?? readings.voltageT),
+        current_r: parseMaybeNumber(readings.current_r ?? readings.currentR),
+        current_s: parseMaybeNumber(readings.current_s ?? readings.currentS),
+        current_t: parseMaybeNumber(readings.current_t ?? readings.currentT),
+        power: parseMaybeNumber(readings.power),
+        power_factor: parseMaybeNumber(readings.power_factor ?? readings.powerFactor),
+        frequency: parseMaybeNumber(readings.frequency),
+        temperature: parseMaybeNumber(readings.temperature),
+        energy: parseMaybeNumber(readings.energy),
+        thd_v: parseMaybeNumber(readings.thd_v ?? readings.thdVoltage),
+        thd_i: parseMaybeNumber(readings.thd_i ?? readings.thdCurrent),
+    };
+}
+
 // ── Singleton socket shared by all hooks ──────────────────────────────
 let _socket: Socket | null = null;
 let _isConnected = false;
@@ -94,13 +124,33 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
         thd_i: 0,
     });
     const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-    const initialFetchDone = useRef(false);
+
+    // Hydrate from local cache first so values don't flash to zero after page refresh.
+    useEffect(() => {
+        const cacheKey = getBuildingSensorCacheKey(buildingId, buildingCode);
+        if (!cacheKey) return;
+
+        try {
+            const raw = localStorage.getItem(cacheKey);
+            if (!raw) return;
+            const parsed = JSON.parse(raw) as { sensorData?: Partial<SensorData>; lastUpdate?: string };
+            if (parsed.sensorData) {
+                setSensorData(prev => ({ ...prev, ...parsed.sensorData }));
+            }
+            if (parsed.lastUpdate) {
+                setLastUpdate(new Date(parsed.lastUpdate));
+            }
+        } catch {
+            // Ignore cache parse failures and continue with live/API data.
+        }
+    }, [buildingId, buildingCode]);
 
     // Fetch initial data from API so the page isn't blank on load/refresh
     useEffect(() => {
-        if (initialFetchDone.current) return;
+        let cancelled = false;
+        let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-        const fetchLatest = async () => {
+        const fetchLatest = async (attempt: number = 1) => {
             try {
                 const token = localStorage.getItem('accessToken');
                 let bid = buildingId;
@@ -118,41 +168,68 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
                     }
                 }
 
-                if (!bid) return;
-
-                initialFetchDone.current = true;
+                if (!bid || cancelled) return;
 
                 const res = await fetch(`${API_URL}/api/buildings/${bid}/readings/latest`, {
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
+                if (!res.ok) {
+                    throw new Error(`Failed latest reading request (${res.status})`);
+                }
                 const json = await res.json();
                 if (json.success && json.data) {
                     const r = json.data;
+                    const normalized = normalizeSensorReadings(r as Record<string, unknown>);
                     setSensorData(prev => ({
                         ...prev,
-                        voltage_r: r.voltageR ? parseFloat(r.voltageR) : prev.voltage_r,
-                        voltage_s: r.voltageS ? parseFloat(r.voltageS) : prev.voltage_s,
-                        voltage_t: r.voltageT ? parseFloat(r.voltageT) : prev.voltage_t,
-                        current_r: r.currentR ? parseFloat(r.currentR) : prev.current_r,
-                        current_s: r.currentS ? parseFloat(r.currentS) : prev.current_s,
-                        current_t: r.currentT ? parseFloat(r.currentT) : prev.current_t,
-                        power: r.power ? parseFloat(r.power) : prev.power,
-                        power_factor: r.powerFactor ? parseFloat(r.powerFactor) : prev.power_factor,
-                        frequency: r.frequency ? parseFloat(r.frequency) : prev.frequency,
-                        temperature: r.temperature ? parseFloat(r.temperature) : prev.temperature,
-                        energy: r.energy ? parseFloat(r.energy) : prev.energy,
-                        thd_v: r.thdVoltage ? parseFloat(r.thdVoltage) : prev.thd_v,
-                        thd_i: r.thdCurrent ? parseFloat(r.thdCurrent) : prev.thd_i,
+                        voltage_r: normalized.voltage_r ?? prev.voltage_r,
+                        voltage_s: normalized.voltage_s ?? prev.voltage_s,
+                        voltage_t: normalized.voltage_t ?? prev.voltage_t,
+                        current_r: normalized.current_r ?? prev.current_r,
+                        current_s: normalized.current_s ?? prev.current_s,
+                        current_t: normalized.current_t ?? prev.current_t,
+                        power: normalized.power ?? prev.power,
+                        power_factor: normalized.power_factor ?? prev.power_factor,
+                        frequency: normalized.frequency ?? prev.frequency,
+                        temperature: normalized.temperature ?? prev.temperature,
+                        energy: normalized.energy ?? prev.energy,
+                        thd_v: normalized.thd_v ?? prev.thd_v,
+                        thd_i: normalized.thd_i ?? prev.thd_i,
                     }));
                     setLastUpdate(new Date(r.timestamp));
+                } else {
+                    throw new Error('Latest reading not available yet');
                 }
             } catch (err) {
+                if (attempt < 3 && !cancelled) {
+                    retryTimer = setTimeout(() => fetchLatest(attempt + 1), 1000 * attempt);
+                    return;
+                }
                 console.warn('Could not fetch initial sensor data:', err);
             }
         };
 
         fetchLatest();
+
+        return () => {
+            cancelled = true;
+            if (retryTimer) clearTimeout(retryTimer);
+        };
     }, [buildingCode, buildingId]);
+
+    useEffect(() => {
+        const cacheKey = getBuildingSensorCacheKey(buildingId, buildingCode);
+        if (!cacheKey) return;
+
+        try {
+            localStorage.setItem(cacheKey, JSON.stringify({
+                sensorData,
+                lastUpdate: lastUpdate?.toISOString(),
+            }));
+        } catch {
+            // Ignore quota/storage errors.
+        }
+    }, [buildingId, buildingCode, sensorData, lastUpdate]);
 
     const handleParameterUpdate = useCallback((data: {
         zoneCode: string;
@@ -166,9 +243,12 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
         if (data.buildingCode.toLowerCase() === buildingCode.toLowerCase() &&
             data.zoneCode.toLowerCase() === zoneCode.toLowerCase()) {
 
+            const nextValue = parseMaybeNumber(data.value);
+            if (nextValue === undefined) return;
+
             setSensorData(prev => ({
                 ...prev,
-                [data.parameter]: data.value,
+                [data.parameter]: nextValue,
             }));
             setLastUpdate(new Date(data.timestamp));
         }
@@ -193,7 +273,23 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
             timestamp: Date;
         }) => {
             if (data.buildingCode.toLowerCase() === buildingCode.toLowerCase()) {
-                setSensorData(prev => ({ ...prev, ...data.readings }));
+                const normalized = normalizeSensorReadings(data.readings as Record<string, unknown>);
+                setSensorData(prev => ({
+                    ...prev,
+                    voltage_r: normalized.voltage_r ?? prev.voltage_r,
+                    voltage_s: normalized.voltage_s ?? prev.voltage_s,
+                    voltage_t: normalized.voltage_t ?? prev.voltage_t,
+                    current_r: normalized.current_r ?? prev.current_r,
+                    current_s: normalized.current_s ?? prev.current_s,
+                    current_t: normalized.current_t ?? prev.current_t,
+                    power: normalized.power ?? prev.power,
+                    power_factor: normalized.power_factor ?? prev.power_factor,
+                    frequency: normalized.frequency ?? prev.frequency,
+                    temperature: normalized.temperature ?? prev.temperature,
+                    energy: normalized.energy ?? prev.energy,
+                    thd_v: normalized.thd_v ?? prev.thd_v,
+                    thd_i: normalized.thd_i ?? prev.thd_i,
+                }));
                 setLastUpdate(new Date(data.timestamp));
             }
         });
