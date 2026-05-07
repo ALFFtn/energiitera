@@ -6,9 +6,14 @@ const getApiUrl = () => {
         return import.meta.env.VITE_API_URL;
     }
 
-    // Fallback: use current hostname (useful for network access)
-    const hostname = window.location.hostname;
-    return `http://${hostname}:3001`;
+    // Fallback: use localhost in development, otherwise stay on the current origin.
+    // This works well for Vercel or any reverse-proxy setup that forwards /api.
+    const { hostname, origin } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return `http://${hostname}:3001`;
+    }
+
+    return origin;
 };
 
 export const API_URL = getApiUrl();

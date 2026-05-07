@@ -16,7 +16,7 @@ Backend API for the Dashboard Energy monitoring system built with **Express.js**
 
 - Node.js 18+
 - XAMPP (MySQL service enabled)
-- A MySQL database named `dashboard_energy`
+- A MySQL database reachable at `REDACTED-HOST-1:3306`
 
 ## Quick Start
 
@@ -36,7 +36,7 @@ cp .env.example .env
 
 Edit `.env` and update your database connection:
 ```
-DATABASE_URL=mysql://root@localhost:3306/dashboard_energy
+DATABASE_URL=mysql://REDACTED:REDACTED@REDACTED-HOST-1:3306/REDACTED
 ```
 
 ### 3. Create the database
@@ -45,7 +45,7 @@ DATABASE_URL=mysql://root@localhost:3306/dashboard_energy
 CREATE DATABASE dashboard_energy;
 ```
 
-If you are using XAMPP, make sure MySQL is running from the XAMPP Control Panel before creating the database.
+If you are using the remote server above, make sure the MySQL service is reachable from the backend host before running migrations.
 
 ### 4. Push schema to database
 

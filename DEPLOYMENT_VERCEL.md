@@ -11,7 +11,7 @@
 
 # Environment variables yang diperlukan:
 DATABASE_URL=mysql://REDACTED:REDACTED@REDACTED-HOST-1:3306/REDACTED
-CORS_ORIGIN=https://yourdomain.vercel.app
+CORS_ORIGIN=https://your-vercel-domain.vercel.app
 JWT_SECRET=your-secure-secret
 PORT=3001
 ```
@@ -43,13 +43,13 @@ git push origin main
 Go to Project Settings → Environment Variables and add:
 
 ```
-VITE_API_URL=https://your-backend-url.com
+VITE_API_URL=https://energiitera.com
 ```
 
 Examples:
 - VPS/Heroku: `https://api.yourdomain.com`
 - Localhost: `http://localhost:3001` (development only)
-- Same domain reverse proxy: `https://yourdomain.com/api`
+- Same domain reverse proxy: `https://yourdomain.com`
 
 #### Step 4: Deploy
 Click "Deploy" and wait for build to complete.
