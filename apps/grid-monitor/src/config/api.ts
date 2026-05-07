@@ -13,7 +13,10 @@ const getApiUrl = () => {
         return `http://${hostname}:3001`;
     }
 
-    return origin;
+    // If no VITE_API_URL provided, prefer the public API server for this project.
+    // This avoids deployed frontend falling back to its own origin when the
+    // environment variable was not set (common on Vercel deployments).
+    return 'https://energiitera.com';
 };
 
 export const API_URL = getApiUrl();
