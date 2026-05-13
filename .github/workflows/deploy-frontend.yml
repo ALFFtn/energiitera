@@ -1,0 +1,50 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/grid-monitor/**"
+      - ".github/workflows/deploy-frontend.yml"
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          timeout: 60s
+          script: |
+            set -e
+
+            cd /root/dashboard-energy
+
+            echo "→ Pulling latest code..."
+            git fetch origin
+            git checkout main
+            git pull origin main
+
+            CHANGED=$(git diff HEAD@{1} HEAD --name-only 2>/dev/null | grep 'grid-monitor/package.json' || true)
+            if [ -n "$CHANGED" ]; then
+              echo "→ package.json berubah, npm install..."
+              cd apps/grid-monitor && npm install && cd /root/dashboard-energy
+            fi
+
+            echo "→ Building frontend..."
+            cd apps/grid-monitor
+            npm run build
+            cd /root/dashboard-energy
+
+            echo "→ Reload nginx..."
+            nginx -t && systemctl reload nginx
+
+            echo "✓ Deploy selesai! https://energiitera.com"
