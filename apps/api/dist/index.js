@@ -23,9 +23,9 @@ const httpServer = (0, http_1.createServer)(app);
 // Initialize the MQTT Worker
 const worker = (0, worker_1.createWorker)();
 worker.initializeSocket(httpServer);
-// CORS - allow any origin in development (must be before helmet)
+// CORS
 app.use((0, cors_1.default)({
-    origin: true, // Allow all origins
+    origin: env_1.env.CORS_ORIGIN,
     credentials: true,
 }));
 // Security middleware - configured for API (cross-origin) use

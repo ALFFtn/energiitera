@@ -31,6 +31,11 @@ function parseMaybeNumber(value: unknown): number | undefined {
     return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+// If incoming value is 0 or undefined, keep the previous non-zero value
+function nonZero(next: number | undefined, prev: number): number {
+    return (next !== undefined && next !== 0) ? next : prev;
+}
+
 function getBuildingSensorCacheKey(buildingId?: string, buildingCode?: string): string | null {
     if (buildingId) return `building-sensor:${buildingId}`;
     if (buildingCode) return `building-sensor:${buildingCode.toLowerCase()}`;
@@ -182,19 +187,19 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
                     const normalized = normalizeSensorReadings(r as Record<string, unknown>);
                     setSensorData(prev => ({
                         ...prev,
-                        voltage_r: normalized.voltage_r ?? prev.voltage_r,
-                        voltage_s: normalized.voltage_s ?? prev.voltage_s,
-                        voltage_t: normalized.voltage_t ?? prev.voltage_t,
-                        current_r: normalized.current_r ?? prev.current_r,
-                        current_s: normalized.current_s ?? prev.current_s,
-                        current_t: normalized.current_t ?? prev.current_t,
-                        power: normalized.power ?? prev.power,
-                        power_factor: normalized.power_factor ?? prev.power_factor,
-                        frequency: normalized.frequency ?? prev.frequency,
-                        temperature: normalized.temperature ?? prev.temperature,
-                        energy: normalized.energy ?? prev.energy,
-                        thd_v: normalized.thd_v ?? prev.thd_v,
-                        thd_i: normalized.thd_i ?? prev.thd_i,
+                        voltage_r: nonZero(normalized.voltage_r, prev.voltage_r ?? 0),
+                        voltage_s: nonZero(normalized.voltage_s, prev.voltage_s ?? 0),
+                        voltage_t: nonZero(normalized.voltage_t, prev.voltage_t ?? 0),
+                        current_r: nonZero(normalized.current_r, prev.current_r ?? 0),
+                        current_s: nonZero(normalized.current_s, prev.current_s ?? 0),
+                        current_t: nonZero(normalized.current_t, prev.current_t ?? 0),
+                        power: nonZero(normalized.power, prev.power ?? 0),
+                        power_factor: nonZero(normalized.power_factor, prev.power_factor ?? 0),
+                        frequency: nonZero(normalized.frequency, prev.frequency ?? 50),
+                        temperature: nonZero(normalized.temperature, prev.temperature ?? 0),
+                        energy: nonZero(normalized.energy, prev.energy ?? 0),
+                        thd_v: nonZero(normalized.thd_v, prev.thd_v ?? 0),
+                        thd_i: nonZero(normalized.thd_i, prev.thd_i ?? 0),
                     }));
                     setLastUpdate(new Date(r.timestamp));
                 } else {
@@ -246,10 +251,13 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
             const nextValue = parseMaybeNumber(data.value);
             if (nextValue === undefined) return;
 
-            setSensorData(prev => ({
-                ...prev,
-                [data.parameter]: nextValue,
-            }));
+            setSensorData(prev => {
+                const prevValue = (prev[data.parameter as keyof SensorData] as number) ?? 0;
+                return {
+                    ...prev,
+                    [data.parameter]: nonZero(nextValue, prevValue),
+                };
+            });
             setLastUpdate(new Date(data.timestamp));
         }
     }, [buildingCode, zoneCode]);
@@ -276,19 +284,19 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
                 const normalized = normalizeSensorReadings(data.readings as Record<string, unknown>);
                 setSensorData(prev => ({
                     ...prev,
-                    voltage_r: normalized.voltage_r ?? prev.voltage_r,
-                    voltage_s: normalized.voltage_s ?? prev.voltage_s,
-                    voltage_t: normalized.voltage_t ?? prev.voltage_t,
-                    current_r: normalized.current_r ?? prev.current_r,
-                    current_s: normalized.current_s ?? prev.current_s,
-                    current_t: normalized.current_t ?? prev.current_t,
-                    power: normalized.power ?? prev.power,
-                    power_factor: normalized.power_factor ?? prev.power_factor,
-                    frequency: normalized.frequency ?? prev.frequency,
-                    temperature: normalized.temperature ?? prev.temperature,
-                    energy: normalized.energy ?? prev.energy,
-                    thd_v: normalized.thd_v ?? prev.thd_v,
-                    thd_i: normalized.thd_i ?? prev.thd_i,
+                    voltage_r: nonZero(normalized.voltage_r, prev.voltage_r ?? 0),
+                    voltage_s: nonZero(normalized.voltage_s, prev.voltage_s ?? 0),
+                    voltage_t: nonZero(normalized.voltage_t, prev.voltage_t ?? 0),
+                    current_r: nonZero(normalized.current_r, prev.current_r ?? 0),
+                    current_s: nonZero(normalized.current_s, prev.current_s ?? 0),
+                    current_t: nonZero(normalized.current_t, prev.current_t ?? 0),
+                    power: nonZero(normalized.power, prev.power ?? 0),
+                    power_factor: nonZero(normalized.power_factor, prev.power_factor ?? 0),
+                    frequency: nonZero(normalized.frequency, prev.frequency ?? 50),
+                    temperature: nonZero(normalized.temperature, prev.temperature ?? 0),
+                    energy: nonZero(normalized.energy, prev.energy ?? 0),
+                    thd_v: nonZero(normalized.thd_v, prev.thd_v ?? 0),
+                    thd_i: nonZero(normalized.thd_i, prev.thd_i ?? 0),
                 }));
                 setLastUpdate(new Date(data.timestamp));
             }

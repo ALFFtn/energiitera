@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MonitoringHeader } from '../components/monitoring/MonitoringHeader';
 import { MonitoringSidebar } from '../components/monitoring/MonitoringSidebar';
 import { BuildingGrid } from '../components/monitoring/BuildingGrid';
@@ -33,8 +34,8 @@ export function Monitoring() {
                 <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-4 md:p-8">
                     <div className="max-w-7xl mx-auto flex flex-col gap-6">
                         {/* Breadcrumbs */}
-                        <nav className="flex items-center text-sm text-slate-500 dark:text-[#9ca6ba]">
-                            <a className="hover:text-primary transition-colors" href="/">Dashboard</a>
+                        <nav className="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                            <Link className="hover:text-primary transition-colors" to="/monitoring">Monitoring</Link>
                             <span className="material-symbols-outlined text-base mx-2">chevron_right</span>
                             <span className="text-slate-900 dark:text-white font-medium">Buildings</span>
                             {selectedZone && (
@@ -61,7 +62,7 @@ export function Monitoring() {
                             </div>
                             <div className="flex items-center gap-2 md:gap-3">
                                 {/* Mobile: Icon only buttons */}
-                                <button className="flex items-center justify-center h-9 md:h-10 px-3 md:px-4 rounded-lg border border-slate-200 dark:border-[#282e39] bg-white dark:bg-[#1e232e] text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-[#282e39] font-medium text-sm transition-colors">
+                                <button className="flex items-center justify-center h-9 md:h-10 px-3 md:px-4 rounded-lg border border-slate-200 dark:border-surface-dark-lighter bg-white dark:bg-surface-dark text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-surface-dark-lighter font-medium text-sm transition-colors">
                                     <span className="material-symbols-outlined text-[18px] md:text-[20px]">download</span>
                                     <span className="hidden sm:inline ml-2">Export</span>
                                 </button>

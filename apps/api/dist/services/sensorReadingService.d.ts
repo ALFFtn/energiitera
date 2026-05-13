@@ -22,6 +22,21 @@ export declare function getSensorReadings(buildingId: string, options?: {
     limit?: number;
 }): Promise<typeof buildingSensorReadings.$inferSelect[]>;
 export declare function getSensorReadingsInRange(buildingId: string, startDate: Date, endDate: Date, limit?: number): Promise<typeof buildingSensorReadings.$inferSelect[]>;
+export declare function getSensorReadingsBucketed(buildingId: string, startDate: Date, endDate: Date, bucketSeconds: number): Promise<Array<{
+    timestamp: Date;
+    voltageR: string | null;
+    voltageS: string | null;
+    voltageT: string | null;
+    currentR: string | null;
+    currentS: string | null;
+    currentT: string | null;
+    power: string | null;
+    powerFactor: string | null;
+    frequency: string | null;
+    temperature: string | null;
+    thdVoltage: string | null;
+    thdCurrent: string | null;
+}>>;
 export declare function getLatestSensorReading(buildingId: string): Promise<typeof buildingSensorReadings.$inferSelect | null>;
 export declare function getAllLatestReadings(): Promise<Array<{
     buildingId: string;

@@ -10,18 +10,13 @@ export function SignalQuality({ frequency = 50, thdVoltage = 0, thdCurrent = 0 }
     const [frequencyHistory, setFrequencyHistory] = useState<number[]>([50, 50, 50, 50, 50, 50, 50, 50, 50, 50]);
     const lastFreqRef = useRef(frequency);
 
-    // Add new frequency to history
     useEffect(() => {
         if (frequency !== lastFreqRef.current) {
             lastFreqRef.current = frequency;
-            setFrequencyHistory(prev => {
-                const newHistory = [...prev.slice(1), frequency];
-                return newHistory;
-            });
+            setFrequencyHistory(prev => [...prev.slice(1), frequency]);
         }
     }, [frequency]);
 
-    // Generate sparkline path from history
     const generateSparklinePath = () => {
         const width = 180;
         const height = 40;
@@ -35,7 +30,6 @@ export function SignalQuality({ frequency = 50, thdVoltage = 0, thdCurrent = 0 }
             return { x, y: Math.max(0, Math.min(height, y)) };
         });
 
-        // Create smooth path
         let pathD = `M${points[0].x},${points[0].y}`;
         for (let i = 1; i < points.length; i++) {
             const cp1x = points[i - 1].x + (points[i].x - points[i - 1].x) / 2;
@@ -45,24 +39,21 @@ export function SignalQuality({ frequency = 50, thdVoltage = 0, thdCurrent = 0 }
             pathD += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${points[i].x},${points[i].y}`;
         }
 
-        // Create fill path
-        const fillD = `${pathD} L${width},${height} L0,${height} Z`;
-
-        return { linePath: pathD, fillPath: fillD };
+        return {
+            linePath: pathD,
+            fillPath: `${pathD} L${width},${height} L0,${height} Z`,
+        };
     };
 
     const { linePath, fillPath } = generateSparklinePath();
 
-    // Status based on frequency
     const freqStatus = frequency >= 49.9 && frequency <= 50.1 ? 'normal' : frequency >= 49.5 && frequency <= 50.5 ? 'warning' : 'critical';
     const freqStatusColor = freqStatus === 'normal' ? 'text-emerald-500' : freqStatus === 'warning' ? 'text-amber-500' : 'text-red-500';
 
-    // Status based on THD
     const thdTotal = (thdVoltage + thdCurrent) / 2;
     const thdStatus = thdTotal < 5 ? 'normal' : thdTotal < 8 ? 'warning' : 'critical';
     const thdStatusColor = thdStatus === 'normal' ? 'text-emerald-500' : thdStatus === 'warning' ? 'text-amber-500' : 'text-red-500';
 
-    // Calculate bar heights for THD harmonics visualization
     const thdBars = [
         thdVoltage * 10,
         thdCurrent * 8,
@@ -75,19 +66,18 @@ export function SignalQuality({ frequency = 50, thdVoltage = 0, thdCurrent = 0 }
     return (
         <div className="flex flex-col gap-6">
             {/* Frequency */}
-            <div className="glass-panel rounded-2xl p-5 flex-1 flex flex-col justify-between bg-card-dark/75 backdrop-blur-md border border-white/10 shadow-xl">
+            <div className="rounded-2xl p-5 flex-1 flex flex-col justify-between bg-white dark:bg-card-dark/75 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-xl transition-colors">
                 <div className="flex justify-between items-start">
                     <div>
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Frequency</p>
-                        <p className="text-2xl font-black text-white mt-1 tabular-nums">
-                            {frequency.toFixed(2)} <span className="text-sm font-medium text-slate-500">Hz</span>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest">Frequency</p>
+                        <p className="text-2xl font-black text-slate-900 dark:text-white mt-1 tabular-nums">
+                            {frequency.toFixed(2)} <span className="text-sm font-medium text-slate-400 dark:text-slate-500">Hz</span>
                         </p>
                     </div>
                     <span className={`material-symbols-outlined ${freqStatusColor}`}>
                         {freqStatus === 'normal' ? 'check_circle' : freqStatus === 'warning' ? 'warning' : 'error'}
                     </span>
                 </div>
-                {/* Animated Sparkline */}
                 <div className="h-12 w-full mt-2 relative overflow-hidden">
                     <svg className="absolute bottom-0 left-0 w-full h-full" viewBox="0 0 180 40" preserveAspectRatio="none">
                         <defs>
@@ -96,43 +86,28 @@ export function SignalQuality({ frequency = 50, thdVoltage = 0, thdCurrent = 0 }
                                 <stop offset="100%" stopColor="rgba(16, 185, 129, 0)" />
                             </linearGradient>
                         </defs>
-                        {/* Fill area */}
                         <path d={fillPath} fill="url(#freqGradient)" className="transition-all duration-300 ease-out" />
-                        {/* Line */}
-                        <path
-                            d={linePath}
-                            fill="none"
-                            stroke="#10b981"
-                            strokeWidth="2"
-                            className="transition-all duration-300 ease-out"
-                        />
-                        {/* Current point */}
-                        <circle
-                            cx="180"
-                            cy={40 - ((frequency - 49.8) / 0.4) * 40}
-                            r="3"
-                            fill="#10b981"
-                            className="animate-pulse"
-                        />
+                        <path d={linePath} fill="none" stroke="#10b981" strokeWidth="2" className="transition-all duration-300 ease-out" />
+                        <circle cx="180" cy={40 - ((frequency - 49.8) / 0.4) * 40} r="3" fill="#10b981" className="animate-pulse" />
                     </svg>
                 </div>
-                <div className="flex justify-between text-xs text-slate-500 font-mono mt-1">
+                <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500 font-mono mt-1">
                     <span>49.8 Hz</span>
                     <span>50.2 Hz</span>
                 </div>
             </div>
 
             {/* THD */}
-            <div className="glass-panel rounded-2xl p-5 flex-1 flex flex-col justify-between bg-card-dark/75 backdrop-blur-md border border-white/10 shadow-xl">
+            <div className="rounded-2xl p-5 flex-1 flex flex-col justify-between bg-white dark:bg-card-dark/75 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-xl transition-colors">
                 <div className="flex justify-between items-start">
                     <div>
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">THD (Harmonics)</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest">THD (Harmonics)</p>
                         <div className="flex gap-4 mt-1">
-                            <p className="text-lg font-black text-white tabular-nums">
-                                V: {thdVoltage.toFixed(1)}<span className="text-xs font-medium text-slate-500">%</span>
+                            <p className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
+                                V: {thdVoltage.toFixed(1)}<span className="text-xs font-medium text-slate-400 dark:text-slate-500">%</span>
                             </p>
-                            <p className="text-lg font-black text-white tabular-nums">
-                                I: {thdCurrent.toFixed(1)}<span className="text-xs font-medium text-slate-500">%</span>
+                            <p className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
+                                I: {thdCurrent.toFixed(1)}<span className="text-xs font-medium text-slate-400 dark:text-slate-500">%</span>
                             </p>
                         </div>
                     </div>
@@ -140,23 +115,17 @@ export function SignalQuality({ frequency = 50, thdVoltage = 0, thdCurrent = 0 }
                         {thdStatus === 'normal' ? 'check_circle' : thdStatus === 'warning' ? 'warning' : 'error'}
                     </span>
                 </div>
-                {/* Animated Bar Chart for Harmonics */}
                 <div className="flex items-end gap-1 h-12 mt-2">
                     {thdBars.map((height, i) => (
                         <div
                             key={i}
-                            className={`w-1/6 rounded-t-sm transition-all duration-300 ${i === 2 ? 'bg-primary' : 'bg-slate-700'}`}
+                            className={`w-1/6 rounded-t-sm transition-all duration-300 ${i === 2 ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'}`}
                             style={{ height: `${height}%` }}
                         />
                     ))}
                 </div>
-                <div className="flex justify-between text-xs text-slate-500 font-mono mt-1">
-                    <span>H1</span>
-                    <span>H3</span>
-                    <span>H5</span>
-                    <span>H7</span>
-                    <span>H9</span>
-                    <span>H11</span>
+                <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500 font-mono mt-1">
+                    <span>H1</span><span>H3</span><span>H5</span><span>H7</span><span>H9</span><span>H11</span>
                 </div>
             </div>
         </div>

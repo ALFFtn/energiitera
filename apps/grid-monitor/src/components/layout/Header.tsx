@@ -1,9 +1,11 @@
-
+import { Link } from 'react-router-dom';
+import { ThemeToggle } from '../common/ThemeToggle';
+import { ProfileMenu } from '../common/ProfileMenu';
 
 export function Header() {
     return (
-        <header className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-[#282e39] bg-background-light dark:bg-background-dark px-6 py-3 lg:px-10">
-            <div className="flex items-center gap-4 text-slate-900 dark:text-white">
+        <header className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-[#282e39] bg-white dark:bg-background-dark px-6 py-3 lg:px-10 transition-colors">
+            <Link to="/dashboard" className="flex items-center gap-4 text-slate-900 dark:text-white">
                 <div className="size-8 text-primary">
                     <svg className="w-full h-full" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                         <g clipPath="url(#clip0_6_319)">
@@ -15,17 +17,13 @@ export function Header() {
                     </svg>
                 </div>
                 <h2 className="text-lg font-bold leading-tight tracking-[-0.015em]">GridMonitor</h2>
-            </div>
-            <div className="flex flex-1 justify-end gap-4 lg:gap-8 items-center">
-                <div className="flex gap-2">
-                    <button className="group flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-slate-200 dark:bg-[#282e39] text-slate-700 dark:text-white hover:bg-slate-300 dark:hover:bg-[#3b4354] transition-colors">
-                        <span className="material-symbols-outlined text-[20px]">notifications</span>
-                    </button>
-                    <button className="group flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-slate-200 dark:bg-[#282e39] text-slate-700 dark:text-white hover:bg-slate-300 dark:hover:bg-[#3b4354] transition-colors">
-                        <span className="material-symbols-outlined text-[20px]">settings</span>
-                    </button>
-                </div>
-                <div className="bg-center bg-no-repeat bg-cover rounded-full size-10 ring-2 ring-primary/20" data-alt="User profile avatar" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDMlzr-YHYBFa3STtJ9tRakiIvw97sjUXBt3xN6YPh-Mh8HlJ-3FmDXapwgIRcqgoPIt_qR8p87GToTMwHbVaSUsrHe2-G5Woxbvo9Ls_umtiOO_ERM92mLlG6OBiY7VUM8flZThknSWIZEDecdIYhMaDdVIRZiFHNCfeAGoVR-lbaXAWuxF6mM5er3WVt8Nr_e8G_s8O5i7SVA835gWiEUKCA9Y16iPl41q2uynjJS3ZHYyGbhF8G3kakH7FsDAdv48QSXkoW78KXf")' }}></div>
+            </Link>
+            <div className="flex flex-1 justify-end gap-2 items-center">
+                <ThemeToggle />
+                <button className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 w-10 bg-slate-100 dark:bg-[#282e39] text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-[#3b4354] transition-colors">
+                    <span className="material-symbols-outlined text-[20px]">notifications</span>
+                </button>
+                <ProfileMenu />
             </div>
         </header>
     );

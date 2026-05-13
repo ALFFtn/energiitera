@@ -35,6 +35,7 @@ export declare class AuthService {
     }>;
     private generateAccessToken;
     private generateRefreshToken;
+    private parseExpiry;
 }
 export declare const authService: AuthService;
 //# sourceMappingURL=authService.d.ts.map

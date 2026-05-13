@@ -1,0 +1,83 @@
+services:
+
+  # ── MySQL Database ──────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: dashboard-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: dashboard_energy
+      MYSQL_USER: ${MYSQL_USER:-iot}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ── Backend API ─────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.api
+    container_name: dashboard-api
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "mysql://${MYSQL_USER:-iot}:${MYSQL_PASSWORD}@mysql:3306/dashboard_energy"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      PORT: 3001
+      CORS_ORIGIN: "http://${SERVER_IP:-localhost}"
+      WEATHER_CITY: ${WEATHER_CITY:-Bandar Lampung}
+      WEATHER_LAT: ${WEATHER_LAT:--5.3971}
+      WEATHER_LON: ${WEATHER_LON:-105.2668}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ── Frontend + Nginx ────────────────────────────────────────────
+  nginx:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.frontend
+    container_name: dashboard-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ── DB Migration (run once: docker compose run --rm migrate) ────
+  migrate:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.migrate
+    container_name: dashboard-migrate
+    environment:
+      DATABASE_URL: "mysql://${MYSQL_USER:-iot}:${MYSQL_PASSWORD}@mysql:3306/dashboard_energy"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+    profiles:
+      - tools
+
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge

@@ -61,6 +61,17 @@ router.get('/buildings', auth_js_1.authenticate, async (_req, res, next) => {
         next(error);
     }
 });
+// Static sub-routes MUST come before /:id to avoid Express matching them as an id param
+router.get('/buildings/map-data', auth_js_1.authenticate, async (req, res, next) => {
+    try {
+        const zoneId = req.query.zoneId;
+        const buildings = await buildingService_js_1.buildingService.getBuildingsMapData(zoneId);
+        res.json({ success: true, data: buildings });
+    }
+    catch (error) {
+        next(error);
+    }
+});
 router.get('/buildings/:id', auth_js_1.authenticate, async (req, res, next) => {
     try {
         const building = await buildingService_js_1.buildingService.getBuildingById(req.params.id);
@@ -79,11 +90,9 @@ router.put('/buildings/:id', auth_js_1.authenticate, async (req, res, next) => {
         next(error);
     }
 });
-// Create new building with auto-generated MQTT topic
 router.post('/buildings', auth_js_1.authenticate, async (req, res, next) => {
     try {
         const { zoneId, name, code, description, gridConnection, mapCoordinates } = req.body;
-        console.log('📝 Creating building:', { zoneId, name, code });
         if (!zoneId || !name || !code) {
             return res.status(400).json({
                 success: false,
@@ -91,22 +100,14 @@ router.post('/buildings', auth_js_1.authenticate, async (req, res, next) => {
             });
         }
         const building = await buildingService_js_1.buildingService.createBuilding({
-            zoneId,
-            name,
-            code,
-            description,
-            gridConnection,
-            mapCoordinates,
+            zoneId, name, code, description, gridConnection, mapCoordinates,
         });
-        console.log('✅ Building created:', building.id);
         res.status(201).json({ success: true, data: building });
     }
     catch (error) {
-        console.error('❌ Error creating building:', error);
         next(error);
     }
 });
-// Delete building
 router.delete('/buildings/:id', auth_js_1.authenticate, async (req, res, next) => {
     try {
         const building = await buildingService_js_1.buildingService.deleteBuilding(req.params.id);
@@ -116,22 +117,28 @@ router.delete('/buildings/:id', auth_js_1.authenticate, async (req, res, next) =
         next(error);
     }
 });
-router.get('/buildings/map-data', auth_js_1.authenticate, async (req, res, next) => {
-    try {
-        const zoneId = req.query.zoneId;
-        const buildings = await buildingService_js_1.buildingService.getBuildingsMapData(zoneId);
-        res.json({ success: true, data: buildings });
-    }
-    catch (error) {
-        next(error);
-    }
-});
 // Building sensor readings
 router.get('/buildings/:id/readings', auth_js_1.authenticate, async (req, res, next) => {
     try {
-        const { getSensorReadings } = await import('../services/sensorReadingService.js');
         const limit = parseInt(req.query.limit) || 1000;
-        const readings = await getSensorReadings(req.params.id, { limit });
+        const from = req.query.from;
+        const to = req.query.to;
+        const bucket = parseInt(req.query.bucket) || 0;
+        let readings;
+        if (from && to && bucket > 0) {
+            const { getSensorReadingsBucketed } = await import('../services/sensorReadingService.js');
+            readings = await getSensorReadingsBucketed(req.params.id, new Date(from), new Date(to), bucket);
+        }
+        else if (from || to) {
+            const { getSensorReadingsInRange } = await import('../services/sensorReadingService.js');
+            const startDate = from ? new Date(from) : new Date(0);
+            const endDate = to ? new Date(to) : new Date();
+            readings = await getSensorReadingsInRange(req.params.id, startDate, endDate, limit);
+        }
+        else {
+            const { getSensorReadings } = await import('../services/sensorReadingService.js');
+            readings = await getSensorReadings(req.params.id, { limit });
+        }
         res.json({ success: true, data: readings, count: readings.length });
     }
     catch (error) {

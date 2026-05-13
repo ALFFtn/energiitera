@@ -14,7 +14,7 @@ const envSchema = zod_1.z.object({
     JWT_REFRESH_EXPIRES_IN: zod_1.z.string().default('7d'),
     PORT: zod_1.z.string().transform(Number).default('3001'),
     NODE_ENV: zod_1.z.enum(['development', 'production', 'test']).default('development'),
-    CORS_ORIGIN: zod_1.z.string().default('http://localhost:5173'),
+    CORS_ORIGIN: zod_1.z.string().default('https://energiitera.com'),
     // Weather config (Open-Meteo, defaults to Bandar Lampung)
     WEATHER_CITY: zod_1.z.string().default('Bandar Lampung'),
     WEATHER_LAT: zod_1.z.string().transform(Number).default('-5.3971'),

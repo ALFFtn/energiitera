@@ -1,5 +1,5 @@
-
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
 import { AnalyticsDashboard } from './pages/AnalyticsDashboard';
 import { CommandCenter } from './pages/CommandCenter';
 import { Monitoring } from './pages/Monitoring';
@@ -9,18 +9,23 @@ import { AuthGuard } from './components/common/AuthGuard';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<CommandCenter />} />
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          {/* Root redirects to login */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Protected routes */}
-        <Route path="/analytics" element={<AuthGuard><AnalyticsDashboard /></AuthGuard>} />
-        <Route path="/monitoring" element={<AuthGuard><Monitoring /></AuthGuard>} />
-        <Route path="/building/:buildingId" element={<AuthGuard><BuildingDetail /></AuthGuard>} />
-      </Routes>
-    </Router>
+          {/* Public */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Protected */}
+          <Route path="/dashboard" element={<Navigate to="/monitoring" replace />} />
+          <Route path="/analytics" element={<AuthGuard><AnalyticsDashboard /></AuthGuard>} />
+          <Route path="/monitoring" element={<AuthGuard><Monitoring /></AuthGuard>} />
+          <Route path="/building/:buildingId" element={<AuthGuard><BuildingDetail /></AuthGuard>} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 

@@ -54,13 +54,13 @@ function BuildingCardMenu({ buildingId, buildingName, onDelete }: { buildingId: 
                     e.stopPropagation();
                     setIsOpen(!isOpen);
                 }}
-                className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded transition-colors"
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-surface-dark-lighter rounded transition-colors"
                 title="Menu"
             >
                 <span className="material-symbols-outlined text-[18px] text-slate-400">more_vert</span>
             </button>
             {isOpen && (
-                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-[#1e232e] border border-slate-200 dark:border-[#282e39] rounded-lg shadow-lg z-50 min-w-max">
+                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-surface-dark border border-slate-200 dark:border-surface-dark-lighter rounded-lg shadow-lg z-50 min-w-max">
                     <button
                         onClick={(e) => {
                             e.preventDefault();
@@ -96,15 +96,15 @@ function BuildingCard({ id, name, description, totalPower, powerFactor, status }
         ? 'border-red-200 dark:border-red-500/30 hover:border-red-500'
         : isWarning
             ? 'border-orange-200 dark:border-orange-500/30 hover:border-orange-500'
-            : 'border-slate-200 dark:border-[#282e39] hover:border-primary dark:hover:border-primary';
+            : 'border-slate-200 dark:border-surface-dark-lighter hover:border-primary dark:hover:border-primary';
 
     const bgColor = isOffline
-        ? 'bg-slate-50 dark:bg-[#161a21] opacity-75 hover:opacity-100'
-        : 'bg-white dark:bg-[#1e232e]';
+        ? 'bg-slate-50 dark:bg-card-dark opacity-75 hover:opacity-100'
+        : 'bg-white dark:bg-surface-dark';
 
     const statusLabel = isOffline ? 'Offline' : isCritical ? 'Critical' : isWarning ? 'Warning' : 'Operational';
     const statusLabelColor = isOffline
-        ? 'text-slate-500 bg-slate-100 dark:bg-slate-800'
+        ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-surface-dark-lighter'
         : isCritical
             ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10'
             : isWarning
@@ -131,7 +131,7 @@ function BuildingCard({ id, name, description, totalPower, powerFactor, status }
                         </div>
                         <div>
                             <h4 className="font-bold text-slate-900 dark:text-white text-base group-hover:text-primary transition-colors">{name}</h4>
-                            <p className="text-xs text-slate-500 dark:text-[#9ca6ba]">{description || 'No description'}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{description || 'No description'}</p>
                         </div>
                     </div>
                     <div className={`size-3 rounded-full ${statusColor}`}></div>
@@ -361,12 +361,12 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
                 <div className="flex gap-2">
                     <button
                         onClick={fetchBuildings}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded transition-colors"
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-surface-dark-lighter rounded transition-colors"
                         title="Refresh"
                     >
                         <span className="material-symbols-outlined text-[18px] text-slate-400">refresh</span>
                     </button>
-                    <select className="bg-white dark:bg-[#1e232e] border border-slate-200 dark:border-[#282e39] text-xs rounded px-2 py-1 text-slate-600 dark:text-[#9ca6ba]">
+                    <select className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-surface-dark-lighter text-xs rounded px-2 py-1 text-slate-600 dark:text-slate-400">
                         <option>Sort by: Name</option>
                         <option>Sort by: Load</option>
                         <option>Sort by: Status</option>

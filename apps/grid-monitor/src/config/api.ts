@@ -1,22 +1,16 @@
 // API Configuration
 // Uses environment variables from .env, with fallback to window.location for network access
 const getApiUrl = () => {
-    // Check if environment variable is set
-    if (import.meta.env.VITE_API_URL) {
-        return import.meta.env.VITE_API_URL;
-    }
+    const envUrl = import.meta.env.VITE_API_URL;
+    if (envUrl) return envUrl;
 
-    // Fallback: use localhost in development, otherwise stay on the current origin.
-    // This works well for Vercel or any reverse-proxy setup that forwards /api.
-    const { hostname, origin } = window.location;
+    const { hostname } = window.location;
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
         return `http://${hostname}:3001`;
     }
 
-    // If no VITE_API_URL provided, prefer the public API server for this project.
-    // This avoids deployed frontend falling back to its own origin when the
-    // environment variable was not set (common on Vercel deployments).
-    return 'https://energiitera.com';
+    // Production behind nginx: use same origin so /api/ and /socket.io/ are proxied.
+    return '';
 };
 
 export const API_URL = getApiUrl();

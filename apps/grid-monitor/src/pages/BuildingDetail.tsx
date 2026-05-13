@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ProfileMenu } from '../components/common/ProfileMenu';
+import { ThemeToggle } from '../components/common/ThemeToggle';
 import { VoltageGauge } from '../components/panel/VoltageGauge';
 import { LineVoltageGauge } from '../components/panel/LineVoltageGauge';
 import { PowerFactorGauge } from '../components/panel/PowerFactorGauge';
@@ -253,13 +254,14 @@ export function BuildingDetail() {
                     {/* Live indicator */}
                     <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border ${isConnected ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-500/10 border-slate-500/20'}`}>
                         <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
-                        <span className="text-xs font-medium text-slate-300">{isConnected ? 'Live' : 'Connecting'} • {formatLastUpdate()}</span>
+                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{isConnected ? 'Live' : 'Connecting'} • {formatLastUpdate()}</span>
                     </div>
                     {/* Status badge */}
                     <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border ${statusBgColors[building.status]}`}>
                         <span className={`w-2 h-2 rounded-full ${statusColors[building.status]}`}></span>
                         <span className="text-xs font-medium capitalize">{building.status}</span>
                     </div>
+                    <ThemeToggle />
                     <button className="text-slate-400 hover:text-primary transition-colors">
                         <span className="material-symbols-outlined">notifications</span>
                     </button>
@@ -348,7 +350,6 @@ export function BuildingDetail() {
                         thdVoltage={thdVoltage}
                         thdCurrent={thdCurrent}
                     />
-                    <EventLog />
                 </div>
 
                 {/* 24h Trend Charts */}
@@ -371,8 +372,8 @@ export function BuildingDetail() {
                     />
                 </div>
 
-                {/* Parameter History Chart */}
-                <div className="mb-8">
+                {/* Parameter History Chart + Event Log */}
+                <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6 mb-8">
                     <ParameterChart
                         voltage_r={voltage.r}
                         voltage_s={voltage.s}
@@ -386,6 +387,7 @@ export function BuildingDetail() {
                         temperature={temperature}
                         buildingId={buildingId}
                     />
+                    <EventLog />
                 </div>
 
                 {/* Quick Actions */}

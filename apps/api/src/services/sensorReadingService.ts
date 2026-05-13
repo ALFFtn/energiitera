@@ -1,6 +1,6 @@
 import { db } from '../config/database';
 import { buildingSensorReadings, buildings } from '../db/schema';
-import { eq, and, gte, lte, desc } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
 
 interface SensorData {
     voltage_r?: number;
@@ -141,6 +141,53 @@ export async function getSensorReadingsInRange(
         )
         .orderBy(desc(buildingSensorReadings.timestamp))
         .limit(limit);
+}
+
+// Get sensor readings bucketed by time interval (for chart downsampling)
+export async function getSensorReadingsBucketed(
+    buildingId: string,
+    startDate: Date,
+    endDate: Date,
+    bucketSeconds: number,
+): Promise<Array<{
+    timestamp: Date;
+    voltageR: string | null;
+    voltageS: string | null;
+    voltageT: string | null;
+    currentR: string | null;
+    currentS: string | null;
+    currentT: string | null;
+    power: string | null;
+    powerFactor: string | null;
+    frequency: string | null;
+    temperature: string | null;
+    thdVoltage: string | null;
+    thdCurrent: string | null;
+}>> {
+    const bs = bucketSeconds;
+    return await db.select({
+        timestamp: sql<Date>`FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(${buildingSensorReadings.timestamp}) / ${bs}) * ${bs})`,
+        voltageR:    sql<string>`CAST(AVG(CAST(${buildingSensorReadings.voltageR}    AS DECIMAL(10,4))) AS CHAR)`,
+        voltageS:    sql<string>`CAST(AVG(CAST(${buildingSensorReadings.voltageS}    AS DECIMAL(10,4))) AS CHAR)`,
+        voltageT:    sql<string>`CAST(AVG(CAST(${buildingSensorReadings.voltageT}    AS DECIMAL(10,4))) AS CHAR)`,
+        currentR:    sql<string>`CAST(AVG(CAST(${buildingSensorReadings.currentR}    AS DECIMAL(10,4))) AS CHAR)`,
+        currentS:    sql<string>`CAST(AVG(CAST(${buildingSensorReadings.currentS}    AS DECIMAL(10,4))) AS CHAR)`,
+        currentT:    sql<string>`CAST(AVG(CAST(${buildingSensorReadings.currentT}    AS DECIMAL(10,4))) AS CHAR)`,
+        power:       sql<string>`CAST(AVG(CAST(${buildingSensorReadings.power}       AS DECIMAL(10,4))) AS CHAR)`,
+        powerFactor: sql<string>`CAST(AVG(CAST(${buildingSensorReadings.powerFactor} AS DECIMAL(10,4))) AS CHAR)`,
+        frequency:   sql<string>`CAST(AVG(CAST(${buildingSensorReadings.frequency}   AS DECIMAL(10,4))) AS CHAR)`,
+        temperature: sql<string>`CAST(AVG(CAST(${buildingSensorReadings.temperature} AS DECIMAL(10,4))) AS CHAR)`,
+        thdVoltage:  sql<string>`CAST(AVG(CAST(${buildingSensorReadings.thdVoltage}  AS DECIMAL(10,4))) AS CHAR)`,
+        thdCurrent:  sql<string>`CAST(AVG(CAST(${buildingSensorReadings.thdCurrent}  AS DECIMAL(10,4))) AS CHAR)`,
+    })
+    .from(buildingSensorReadings)
+    .where(and(
+        eq(buildingSensorReadings.buildingId, buildingId),
+        gte(buildingSensorReadings.timestamp, startDate),
+        lte(buildingSensorReadings.timestamp, endDate),
+    ))
+    .groupBy(sql`FLOOR(UNIX_TIMESTAMP(${buildingSensorReadings.timestamp}) / ${bs})`)
+    .orderBy(sql`FLOOR(UNIX_TIMESTAMP(${buildingSensorReadings.timestamp}) / ${bs}) ASC`);
 }
 
 // Get the latest sensor reading for a building

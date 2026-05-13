@@ -151,13 +151,19 @@ class AuthService {
     }
     generateAccessToken(payload) {
         return jsonwebtoken_1.default.sign(payload, env_js_1.env.JWT_SECRET, {
-            expiresIn: '15m', // 15 minutes
+            expiresIn: this.parseExpiry(env_js_1.env.JWT_EXPIRES_IN),
         });
     }
     generateRefreshToken(userId) {
         return jsonwebtoken_1.default.sign({ userId }, env_js_1.env.JWT_SECRET, {
-            expiresIn: '7d', // 7 days
+            expiresIn: this.parseExpiry(env_js_1.env.JWT_REFRESH_EXPIRES_IN),
         });
+    }
+    // Convert env strings like '15m', '7d' to seconds for jwt.sign
+    parseExpiry(duration) {
+        const units = { s: 1, m: 60, h: 3600, d: 86400, w: 604800 };
+        const match = duration.match(/^(\d+)([smhdw])$/);
+        return match ? parseInt(match[1]) * (units[match[2]] ?? 1) : 900;
     }
 }
 exports.AuthService = AuthService;

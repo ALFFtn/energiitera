@@ -174,14 +174,21 @@ export class AuthService {
 
     private generateAccessToken(payload: JwtPayload): string {
         return jwt.sign(payload, env.JWT_SECRET, {
-            expiresIn: '15m', // 15 minutes
+            expiresIn: this.parseExpiry(env.JWT_EXPIRES_IN),
         });
     }
 
     private generateRefreshToken(userId: string): string {
         return jwt.sign({ userId }, env.JWT_SECRET, {
-            expiresIn: '7d', // 7 days
+            expiresIn: this.parseExpiry(env.JWT_REFRESH_EXPIRES_IN),
         });
+    }
+
+    // Convert env strings like '15m', '7d' to seconds for jwt.sign
+    private parseExpiry(duration: string): number {
+        const units: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400, w: 604800 };
+        const match = duration.match(/^(\d+)([smhdw])$/);
+        return match ? parseInt(match[1]) * (units[match[2]] ?? 1) : 900;
     }
 }
 

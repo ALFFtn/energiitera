@@ -1,1 +1,23 @@
 node_modules
+dist
+
+# Environment files — never commit secrets
+.env
+.env.local
+.env.production
+apps/api/.env
+apps/grid-monitor/.env
+apps/grid-monitor/.env.local
+# Allow frontend production env (only has VITE_API_URL= empty, no secrets)
+!apps/grid-monitor/.env.production
+
+# Logs
+logs/
+*.log
+
+# Docker
+.docker-data/
+
+# OS
+.DS_Store
+Thumbs.db

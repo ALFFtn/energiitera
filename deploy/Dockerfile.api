@@ -1,0 +1,31 @@
+# ─── Stage 1: Build TypeScript ────────────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /build
+
+COPY apps/api/package.json ./
+RUN npm install
+
+COPY apps/api/src ./src
+COPY apps/api/tsconfig.json ./
+
+RUN npx tsc
+
+# ─── Stage 2: Production runtime ──────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+# netcat for MySQL readiness check in entrypoint
+RUN apk add --no-cache netcat-openbsd
+
+COPY apps/api/package.json ./
+RUN npm install --omit=dev
+
+COPY --from=builder /build/dist ./dist
+COPY deploy/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 3001
+ENV NODE_ENV=production
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["node", "dist/index.js"]

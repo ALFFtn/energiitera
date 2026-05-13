@@ -22,9 +22,9 @@ const httpServer = createServer(app);
 const worker = createWorker();
 worker.initializeSocket(httpServer);
 
-// CORS - allow any origin in development (must be before helmet)
+// CORS
 app.use(cors({
-    origin: true,  // Allow all origins
+    origin: env.CORS_ORIGIN,
     credentials: true,
 }));
 

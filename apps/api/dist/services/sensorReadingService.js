@@ -4,6 +4,7 @@ exports.saveSensorReading = saveSensorReading;
 exports.flushSensorReadings = flushSensorReadings;
 exports.getSensorReadings = getSensorReadings;
 exports.getSensorReadingsInRange = getSensorReadingsInRange;
+exports.getSensorReadingsBucketed = getSensorReadingsBucketed;
 exports.getLatestSensorReading = getLatestSensorReading;
 exports.getAllLatestReadings = getAllLatestReadings;
 exports.exportReadingsAsCSV = exportReadingsAsCSV;
@@ -96,6 +97,29 @@ async function getSensorReadingsInRange(buildingId, startDate, endDate, limit = 
         .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.buildingSensorReadings.buildingId, buildingId), (0, drizzle_orm_1.gte)(schema_1.buildingSensorReadings.timestamp, startDate), (0, drizzle_orm_1.lte)(schema_1.buildingSensorReadings.timestamp, endDate)))
         .orderBy((0, drizzle_orm_1.desc)(schema_1.buildingSensorReadings.timestamp))
         .limit(limit);
+}
+// Get sensor readings bucketed by time interval (for chart downsampling)
+async function getSensorReadingsBucketed(buildingId, startDate, endDate, bucketSeconds) {
+    const bs = bucketSeconds;
+    return await database_1.db.select({
+        timestamp: (0, drizzle_orm_1.sql) `FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(${schema_1.buildingSensorReadings.timestamp}) / ${bs}) * ${bs})`,
+        voltageR: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.voltageR}    AS DECIMAL(10,4))) AS CHAR)`,
+        voltageS: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.voltageS}    AS DECIMAL(10,4))) AS CHAR)`,
+        voltageT: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.voltageT}    AS DECIMAL(10,4))) AS CHAR)`,
+        currentR: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.currentR}    AS DECIMAL(10,4))) AS CHAR)`,
+        currentS: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.currentS}    AS DECIMAL(10,4))) AS CHAR)`,
+        currentT: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.currentT}    AS DECIMAL(10,4))) AS CHAR)`,
+        power: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.power}       AS DECIMAL(10,4))) AS CHAR)`,
+        powerFactor: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.powerFactor} AS DECIMAL(10,4))) AS CHAR)`,
+        frequency: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.frequency}   AS DECIMAL(10,4))) AS CHAR)`,
+        temperature: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.temperature} AS DECIMAL(10,4))) AS CHAR)`,
+        thdVoltage: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.thdVoltage}  AS DECIMAL(10,4))) AS CHAR)`,
+        thdCurrent: (0, drizzle_orm_1.sql) `CAST(AVG(CAST(${schema_1.buildingSensorReadings.thdCurrent}  AS DECIMAL(10,4))) AS CHAR)`,
+    })
+        .from(schema_1.buildingSensorReadings)
+        .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.buildingSensorReadings.buildingId, buildingId), (0, drizzle_orm_1.gte)(schema_1.buildingSensorReadings.timestamp, startDate), (0, drizzle_orm_1.lte)(schema_1.buildingSensorReadings.timestamp, endDate)))
+        .groupBy((0, drizzle_orm_1.sql) `FLOOR(UNIX_TIMESTAMP(${schema_1.buildingSensorReadings.timestamp}) / ${bs})`)
+        .orderBy((0, drizzle_orm_1.sql) `FLOOR(UNIX_TIMESTAMP(${schema_1.buildingSensorReadings.timestamp}) / ${bs}) ASC`);
 }
 // Get the latest sensor reading for a building
 async function getLatestSensorReading(buildingId) {
