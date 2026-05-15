@@ -180,7 +180,11 @@ router.get('/buildings/:id/readings/export', authenticate, async (req, res, next
     try {
         const { exportReadingsAsCSV } = await import('../services/sensorReadingService.js');
         const building = await buildingService.getBuildingById(req.params.id);
-        const csvData = await exportReadingsAsCSV(req.params.id);
+
+        const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+        const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+        const csvData = await exportReadingsAsCSV(req.params.id, startDate, endDate);
 
         // Convert to CSV string
         const csvContent = csvData.map(row => row.join(',')).join('\n');

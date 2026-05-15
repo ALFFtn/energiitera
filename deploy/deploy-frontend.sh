@@ -12,7 +12,7 @@ set -e
 # ── KONFIGURASI ───────────────────────────────────────────────
 SSH_USER="root"
 SSH_HOST="72.61.140.143"
-SSH_PORT="22"
+SSH_PORT="443"
 REMOTE_PROJECT="/root/dashboard-energy"
 GIT_BRANCH="main"
 NGINX_RELOAD=true

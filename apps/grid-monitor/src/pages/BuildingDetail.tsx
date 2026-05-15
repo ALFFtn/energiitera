@@ -38,6 +38,10 @@ export function BuildingDetail() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [exportStartDate, setExportStartDate] = useState('');
+    const [exportEndDate, setExportEndDate] = useState('');
+    const [isExporting, setIsExporting] = useState(false);
 
     // Real-time LVMDP sensor data via Socket.io
     const {
@@ -65,35 +69,60 @@ export function BuildingDetail() {
         return `${Math.floor(seconds / 60)}m ago`;
     };
 
+    const applyExportPreset = (preset: 'today' | '24h' | '7d' | '30d') => {
+        const now = new Date();
+        const end = now.toISOString().slice(0, 16);
+        let start: string;
+        if (preset === 'today') {
+            const todayStart = new Date(now);
+            todayStart.setHours(0, 0, 0, 0);
+            start = todayStart.toISOString().slice(0, 16);
+        } else if (preset === '24h') {
+            start = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+        } else if (preset === '7d') {
+            start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+        } else {
+            start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+        }
+        setExportStartDate(start);
+        setExportEndDate(end);
+    };
+
     // Export sensor data to CSV (from database or current snapshot)
     const exportToCSV = async () => {
         if (!building) return;
+        setIsExporting(true);
 
         const token = localStorage.getItem('accessToken');
 
         try {
-            // Try to export from database first
-            const response = await fetch(`${API_URL}/api/buildings/${building.id}/readings/export`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
+            let url = `${API_URL}/api/buildings/${building.id}/readings/export`;
+            const params = new URLSearchParams();
+            if (exportStartDate) params.set('startDate', new Date(exportStartDate).toISOString());
+            if (exportEndDate) params.set('endDate', new Date(exportEndDate).toISOString());
+            if (params.toString()) url += `?${params.toString()}`;
+
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` },
             });
 
             if (response.ok) {
-                // Download the file from API
                 const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
+                const objectUrl = URL.createObjectURL(blob);
                 const link = document.createElement('a');
-                link.href = url;
+                link.href = objectUrl;
                 link.download = `sensor-readings-${building.code}-${new Date().toISOString().split('T')[0]}.csv`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+                URL.revokeObjectURL(objectUrl);
+                setIsExportModalOpen(false);
                 return;
             }
         } catch {
             console.log('API export failed, using current snapshot');
+        } finally {
+            setIsExporting(false);
         }
 
         // Fallback: Export current snapshot
@@ -102,13 +131,11 @@ export function BuildingDetail() {
         const dateStr = new Date().toLocaleDateString('id-ID');
         const timeStr = new Date().toLocaleTimeString('id-ID');
 
-        // Calculate L-L voltages
         const voltageRS = ((voltage.r + voltage.s) / 2) * SQRT3;
         const voltageST = ((voltage.s + voltage.t) / 2) * SQRT3;
         const voltageTR = ((voltage.t + voltage.r) / 2) * SQRT3;
         const reactivePower = power * Math.tan(Math.acos(powerFactor || 0.95));
 
-        // CSV Headers and Data
         const csvRows = [
             ['LVMDP Sensor Report (Current Snapshot)'],
             [`Building: ${building.name} (${building.code})`],
@@ -140,19 +167,17 @@ export function BuildingDetail() {
             [`Connection Status: ${isConnected ? 'Online' : 'Offline'}`],
         ];
 
-        // Convert to CSV string
         const csvContent = csvRows.map(row => row.join(',')).join('\n');
-
-        // Create blob and download
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
+        const objectUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = url;
+        link.href = objectUrl;
         link.download = `lvmdp-snapshot-${building.code}-${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(objectUrl);
+        setIsExportModalOpen(false);
     };
 
     useEffect(() => {
@@ -393,7 +418,7 @@ export function BuildingDetail() {
                 {/* Quick Actions */}
                 <div className="flex flex-wrap gap-3">
                     <button
-                        onClick={exportToCSV}
+                        onClick={() => setIsExportModalOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1e232e] border border-slate-200 dark:border-[#282e39] rounded-lg hover:border-primary dark:hover:border-primary transition-colors text-sm font-medium"
                     >
                         <span className="material-symbols-outlined text-[18px]">download</span>
@@ -427,6 +452,117 @@ export function BuildingDetail() {
                     buildingName={building.name}
                     zoneCode={building.zone.code}
                 />
+            )}
+
+            {/* Export CSV Modal */}
+            {isExportModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-[#161b26] rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-[#232936]">
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-[#232936]">
+                            <div className="flex items-center gap-3">
+                                <div className="size-9 flex items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                    <span className="material-symbols-outlined text-[20px]">download</span>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-slate-900 dark:text-white">Export CSV</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">{building?.name}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsExportModalOpen(false)}
+                                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-slate-400 text-[20px]">close</span>
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-5 space-y-5">
+                            {/* Preset Buttons */}
+                            <div>
+                                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Rentang Cepat</p>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {([
+                                        { key: 'today', label: 'Hari Ini' },
+                                        { key: '24h', label: '24 Jam' },
+                                        { key: '7d', label: '7 Hari' },
+                                        { key: '30d', label: '30 Hari' },
+                                    ] as const).map(({ key, label }) => (
+                                        <button
+                                            key={key}
+                                            onClick={() => applyExportPreset(key)}
+                                            className="py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-[#232936] bg-slate-50 dark:bg-white/5 hover:border-primary hover:text-primary dark:hover:border-primary transition-colors"
+                                        >
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Date Range Inputs */}
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                                        Tanggal Mulai
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        value={exportStartDate}
+                                        onChange={e => setExportStartDate(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-[#232936] bg-white dark:bg-[#1e232e] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                                        Tanggal Akhir
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        value={exportEndDate}
+                                        onChange={e => setExportEndDate(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-[#232936] bg-white dark:bg-[#1e232e] text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Info */}
+                            {!exportStartDate && !exportEndDate && (
+                                <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
+                                    <span className="material-symbols-outlined text-blue-500 text-[16px] mt-0.5 shrink-0">info</span>
+                                    <p className="text-xs text-blue-600 dark:text-blue-400">Kosongkan rentang untuk mengekspor semua data (maks. 10.000 baris) atau pilih rentang kustom.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex gap-3 p-5 pt-0">
+                            <button
+                                onClick={() => setIsExportModalOpen(false)}
+                                className="flex-1 py-2.5 rounded-lg border border-slate-200 dark:border-[#232936] text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={exportToCSV}
+                                disabled={isExporting}
+                                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                {isExporting ? (
+                                    <>
+                                        <span className="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                                        Mengekspor...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined text-[16px]">download</span>
+                                        Download CSV
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

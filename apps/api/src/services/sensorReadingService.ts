@@ -241,8 +241,14 @@ export async function getAllLatestReadings(): Promise<Array<{
 }
 
 // Export readings as CSV-ready array
-export async function exportReadingsAsCSV(buildingId: string): Promise<string[][]> {
-    const readings = await getSensorReadings(buildingId, { limit: 10000 });
+export async function exportReadingsAsCSV(
+    buildingId: string,
+    startDate?: Date,
+    endDate?: Date
+): Promise<string[][]> {
+    const readings = startDate && endDate
+        ? await getSensorReadingsInRange(buildingId, startDate, endDate, 50000)
+        : await getSensorReadings(buildingId, { limit: 10000 });
 
     const headers = [
         'Timestamp',
