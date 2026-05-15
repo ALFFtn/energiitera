@@ -47,6 +47,7 @@ services:
 
   # ── Frontend + Nginx ────────────────────────────────────────────
   nginx:
+    image: ghcr.io/alfin122130108-cyber/dashboard-energy-frontend:latest
     build:
       context: .
       dockerfile: deploy/Dockerfile.frontend

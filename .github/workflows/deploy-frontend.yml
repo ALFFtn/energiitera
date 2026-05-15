@@ -5,46 +5,58 @@ on:
     branches: [main]
     paths:
       - "apps/grid-monitor/**"
+      - "deploy/Dockerfile.frontend"
+      - "deploy/nginx/**"
       - ".github/workflows/deploy-frontend.yml"
 
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
-      - name: Deploy via SSH
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/Dockerfile.frontend
+          push: true
+          tags: ghcr.io/alfin122130108-cyber/dashboard-energy-frontend:latest
+
+      - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_ACTOR: ${{ github.actor }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          timeout: 60s
+          envs: GH_TOKEN,GH_ACTOR
           script: |
             set -e
 
+            echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
+
             cd /root/dashboard-energy
-
-            echo "→ Pulling latest code..."
-            git fetch origin
-            git checkout main
-            git pull origin main
-
-            CHANGED=$(git diff HEAD@{1} HEAD --name-only 2>/dev/null | grep 'grid-monitor/package.json' || true)
-            if [ -n "$CHANGED" ]; then
-              echo "→ package.json berubah, npm install..."
-              cd apps/grid-monitor && npm install && cd /root/dashboard-energy
-            fi
-
-            echo "→ Building frontend..."
-            cd apps/grid-monitor
-            npm run build
-            cd /root/dashboard-energy
-
-            echo "→ Reload nginx..."
-            nginx -t && systemctl reload nginx
+            docker compose pull nginx
+            docker compose up -d --no-deps --force-recreate nginx
 
             echo "✓ Deploy selesai! https://energiitera.com"
