@@ -9,7 +9,7 @@ on:
       - "deploy/nginx/**"
       - ".github/workflows/deploy-frontend.yml"
 
-  workflow_dispatch:
+  workflow_dispatch: # v2
 
 permissions:
   contents: read
