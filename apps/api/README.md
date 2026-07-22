@@ -15,8 +15,7 @@ Backend API for the Dashboard Energy monitoring system built with **Express.js**
 ## Prerequisites
 
 - Node.js 18+
-- XAMPP (MySQL service enabled)
-- A MySQL database reachable at `REDACTED-HOST-1:3306`
+- MySQL server lokal (via XAMPP, apt, atau container `dashboard-mysql` di docker-compose.yml root repo)
 
 ## Quick Start
 
@@ -36,7 +35,7 @@ cp .env.example .env
 
 Edit `.env` and update your database connection:
 ```
-DATABASE_URL=mysql://REDACTED:REDACTED@REDACTED-HOST-1:3306/REDACTED
+DATABASE_URL=mysql://root:@localhost:3306/dashboard_energy
 ```
 
 ### 3. Create the database
