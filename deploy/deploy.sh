@@ -32,7 +32,7 @@ docker compose up -d
 # Tunggu API siap
 log "Waiting for API to be healthy..."
 for i in $(seq 1 30); do
-    if docker compose exec -T api wget -qO- http://localhost:3001/health 2>/dev/null | grep -q '"status":"ok"'; then
+    if docker compose exec -T api wget -qO- http://127.0.0.1:3001/health 2>/dev/null | grep -q '"status":"ok"'; then
         log "API is healthy."
         break
     fi

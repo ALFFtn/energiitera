@@ -38,6 +38,10 @@ services:
       WEATHER_CITY: ${WEATHER_CITY:-Bandar Lampung}
       WEATHER_LAT: ${WEATHER_LAT:--5.3971}
       WEATHER_LON: ${WEATHER_LON:-105.2668}
+      MQTT_BROKER_URL: ${MQTT_BROKER_URL:-mqtt://localhost:1883}
+      MQTT_USERNAME: ${MQTT_USERNAME:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX:-energy/buildings}
     depends_on:
       mysql:
         condition: service_healthy
@@ -68,6 +72,7 @@ services:
     container_name: dashboard-migrate
     environment:
       DATABASE_URL: "mysql://${MYSQL_USER:-iot}:${MYSQL_PASSWORD}@mysql:3306/dashboard_energy"
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       mysql:
         condition: service_healthy
