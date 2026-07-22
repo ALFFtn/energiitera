@@ -7,10 +7,10 @@
 **Option A: Deploy Backend ke VPS/Render/Heroku**
 ```bash
 # Backend (api folder) perlu di-deploy ke server yang support Node.js
-# Database sudah tersedia di: REDACTED-HOST-1:3306 (REDACTED)
+# Database: minta kredensial ke admin, jangan hardcode di sini/di repo
 
 # Environment variables yang diperlukan:
-DATABASE_URL=mysql://REDACTED:REDACTED@REDACTED-HOST-1:3306/REDACTED
+DATABASE_URL=mysql://<user>:<password>@<host>:3306/<database>
 CORS_ORIGIN=https://your-vercel-domain.vercel.app
 JWT_SECRET=your-secure-secret
 PORT=3001
@@ -59,11 +59,7 @@ Click "Deploy" and wait for build to complete.
 ## Database Info
 
 **Current Database Setup:**
-- Host: `REDACTED-HOST-1`
-- Port: `3306`
-- User: REDACTED
-- Password: REDACTED
-- Database: `monitoring`
+- Kredensial database tidak lagi dicantumkan di sini — minta ke admin/simpan di secret manager, jangan commit ke repo.
 
 **Test Credentials (seeded in database):**
 - Email: `admin@gridmonitor.iot`
