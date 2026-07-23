@@ -64,20 +64,49 @@ export function ConfigureSensorModal({
         ));
     };
 
-    const handleCopyTopic = (topic: string, key: string) => {
-        navigator.clipboard.writeText(topic);
-        setCopied(key);
-        setTimeout(() => setCopied(null), 2000);
+    const copyText = async (text: string) => {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return;
+        }
+        // Fallback for non-secure contexts (e.g. plain http:// origins),
+        // where the Clipboard API is unavailable.
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+            document.execCommand('copy');
+        } finally {
+            document.body.removeChild(textarea);
+        }
     };
 
-    const handleCopyAllTopics = () => {
+    const handleCopyTopic = async (topic: string, key: string) => {
+        try {
+            await copyText(topic);
+            setCopied(key);
+            setTimeout(() => setCopied(null), 2000);
+        } catch (err) {
+            console.error('Failed to copy topic:', err);
+        }
+    };
+
+    const handleCopyAllTopics = async () => {
         const enabledTopics = parameters
             .filter(p => p.enabled)
             .map(p => `${p.name}: ${p.mqttTopic}`)
             .join('\n');
-        navigator.clipboard.writeText(enabledTopics);
-        setCopied('all');
-        setTimeout(() => setCopied(null), 2000);
+        try {
+            await copyText(enabledTopics);
+            setCopied('all');
+            setTimeout(() => setCopied(null), 2000);
+        } catch (err) {
+            console.error('Failed to copy topics:', err);
+        }
     };
 
     const handleSave = async () => {
