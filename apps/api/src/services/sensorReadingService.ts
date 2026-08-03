@@ -166,7 +166,7 @@ export async function getSensorReadingsBucketed(
 }>> {
     const bs = bucketSeconds;
     return await db.select({
-        timestamp: sql<Date>`FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(${buildingSensorReadings.timestamp}) / ${bs}) * ${bs})`,
+        timestamp: sql<Date>`MIN(FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(${buildingSensorReadings.timestamp}) / ${bs}) * ${bs}))`,
         voltageR:    sql<string>`CAST(AVG(CAST(${buildingSensorReadings.voltageR}    AS DECIMAL(10,4))) AS CHAR)`,
         voltageS:    sql<string>`CAST(AVG(CAST(${buildingSensorReadings.voltageS}    AS DECIMAL(10,4))) AS CHAR)`,
         voltageT:    sql<string>`CAST(AVG(CAST(${buildingSensorReadings.voltageT}    AS DECIMAL(10,4))) AS CHAR)`,
