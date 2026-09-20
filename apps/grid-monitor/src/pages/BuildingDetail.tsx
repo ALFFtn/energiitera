@@ -14,6 +14,9 @@ import { TrendChart24h } from '../components/building/TrendChart24h';
 import { useBuildingSensor } from '../hooks/useSocket';
 import { API_URL } from '../config/api';
 
+// No reading for longer than this => sensor is considered offline
+const OFFLINE_AFTER_MS = 30 * 60 * 1000;
+
 interface Building {
     id: string;
     name: string;
@@ -61,12 +64,27 @@ export function BuildingDetail() {
         buildingId: buildingId,
     });
 
+    // Re-evaluate staleness periodically so the status flips to Offline on its own
+    const [nowMs, setNowMs] = useState(() => Date.now());
+    useEffect(() => {
+        const timer = setInterval(() => setNowMs(Date.now()), 30_000);
+        return () => clearInterval(timer);
+    }, []);
+
+    // Online only if the socket is up AND the last reading is recent
+    const isOnline = isConnected && !!lastUpdate &&
+        nowMs - new Date(lastUpdate).getTime() <= OFFLINE_AFTER_MS;
+
     // Format last update time
     const formatLastUpdate = () => {
         if (!lastUpdate) return 'No data';
-        const seconds = Math.floor((Date.now() - new Date(lastUpdate).getTime()) / 1000);
+        const seconds = Math.max(0, Math.floor((nowMs - new Date(lastUpdate).getTime()) / 1000));
         if (seconds < 60) return `${seconds}s ago`;
-        return `${Math.floor(seconds / 60)}m ago`;
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        return `${Math.floor(hours / 24)}d ago`;
     };
 
     const applyExportPreset = (preset: 'today' | '24h' | '7d' | '30d') => {
@@ -164,7 +182,7 @@ export function BuildingDetail() {
             ['THD Current', thdCurrent.toFixed(2), '%'],
             [''],
             [`Timestamp: ${timestamp}`],
-            [`Connection Status: ${isConnected ? 'Online' : 'Offline'}`],
+            [`Connection Status: ${isOnline ? 'Online' : 'Offline'}`],
         ];
 
         const csvContent = csvRows.map(row => row.join(',')).join('\n');
@@ -277,9 +295,9 @@ export function BuildingDetail() {
                 </div>
                 <div className="flex items-center gap-4">
                     {/* Live indicator */}
-                    <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border ${isConnected ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-500/10 border-slate-500/20'}`}>
-                        <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{isConnected ? 'Live' : 'Connecting'} • {formatLastUpdate()}</span>
+                    <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border ${isOnline ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-500/10 border-slate-500/20'}`}>
+                        <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{isOnline ? 'Live' : 'Offline'} • {formatLastUpdate()}</span>
                     </div>
                     {/* Status badge */}
                     <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border ${statusBgColors[building.status]}`}>
@@ -347,8 +365,8 @@ export function BuildingDetail() {
                             <span className="material-symbols-outlined text-green-500 text-[20px]">signal_cellular_alt</span>
                             <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Connection</span>
                         </div>
-                        <p className="text-3xl font-bold">{isConnected ? 'Online' : 'Offline'}</p>
-                        <p className={`text-xs ${isConnected ? 'text-green-500' : 'text-slate-400'} mt-1`}>{isConnected ? 'Receiving data' : 'Waiting...'}</p>
+                        <p className="text-3xl font-bold">{isOnline ? 'Online' : 'Offline'}</p>
+                        <p className={`text-xs ${isOnline ? 'text-green-500' : 'text-slate-400'} mt-1`}>{isOnline ? 'Receiving data' : lastUpdate ? `Last data ${formatLastUpdate()}` : 'No data received'}</p>
                     </div>
                 </div>
 
