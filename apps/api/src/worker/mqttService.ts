@@ -20,7 +20,6 @@ export class MqttService extends EventEmitter {
     private config: MqttServiceConfig;
     private isConnected = false;
     private reconnectAttempts = 0;
-    private maxReconnectAttempts = 10;
 
     constructor(config: MqttServiceConfig) {
         super();
@@ -70,10 +69,11 @@ export class MqttService extends EventEmitter {
             this.client.on('reconnect', () => {
                 this.reconnectAttempts++;
                 console.log(`🔄 MQTT reconnecting... (attempt ${this.reconnectAttempts})`);
-                if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-                    console.error('❌ Max reconnect attempts reached');
-                    this.client?.end();
-                }
+                // Tidak ada batas percobaan: mqtt.js akan terus mencoba setiap
+                // reconnectPeriod (5s) sampai broker bisa dihubungi lagi.
+                // Sebelumnya di sini koneksi dimatikan paksa setelah 10x gagal,
+                // sehingga worker berhenti total dan tidak pernah pulih sendiri
+                // meski broker sudah kembali normal (lihat HANDOFF.md TODO #2).
             });
 
             this.client.on('message', (topic, message) => {
