@@ -20,6 +20,7 @@ export class MqttService extends EventEmitter {
     private config: MqttServiceConfig;
     private isConnected = false;
     private reconnectAttempts = 0;
+    private intentionalDisconnect = false;
 
     constructor(config: MqttServiceConfig) {
         super();
@@ -49,6 +50,9 @@ export class MqttService extends EventEmitter {
                 this.reconnectAttempts = 0;
                 console.log('✅ MQTT connected successfully');
                 this.subscribeToTopics();
+                // Dipancarkan setiap kali konek, termasuk saat reconnect setelah
+                // putus -- dipakai ConnectivityMonitor untuk deteksi pemulihan.
+                this.emit('connect');
                 resolve();
             });
 
@@ -63,7 +67,11 @@ export class MqttService extends EventEmitter {
             this.client.on('close', () => {
                 this.isConnected = false;
                 console.log('⚠️ MQTT connection closed');
-                this.emit('disconnected');
+                // Jangan anggap ini gangguan kalau memang kita yang mematikan
+                // koneksi (mis. saat deploy/restart API secara sengaja).
+                if (!this.intentionalDisconnect) {
+                    this.emit('disconnected');
+                }
             });
 
             this.client.on('reconnect', () => {
@@ -266,6 +274,7 @@ export class MqttService extends EventEmitter {
 
     disconnect(): void {
         if (this.client) {
+            this.intentionalDisconnect = true;
             this.client.end();
             this.isConnected = false;
             console.log('🔌 MQTT disconnected');

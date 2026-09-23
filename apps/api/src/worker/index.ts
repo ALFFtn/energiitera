@@ -3,6 +3,7 @@ import { MqttService } from './mqttService';
 import { socketService } from './socketService';
 import { dataProcessor } from './dataProcessor';
 import { BatchWriter } from './batchWriter';
+import { connectivityMonitor } from './connectivityMonitor';
 import { saveSensorReading, flushSensorReadings } from '../services/sensorReadingService';
 
 export interface WorkerConfig {
@@ -119,6 +120,19 @@ export class Worker {
             console.error('❌ MQTT Worker error:', error);
         });
 
+        // Notifikasi Telegram + pencatatan alert saat konektivitas berubah
+        this.mqttService.on('disconnected', () => {
+            connectivityMonitor.onMqttDisconnected().catch((err) =>
+                console.error('❌ Gagal memproses disconnect MQTT untuk notifikasi:', err)
+            );
+        });
+        this.mqttService.on('connect', () => {
+            connectivityMonitor.onMqttConnected().catch((err) =>
+                console.error('❌ Gagal memproses reconnect MQTT untuk notifikasi:', err)
+            );
+        });
+        connectivityMonitor.start();
+
         // Start batch writer
         this.batchWriter.start();
 
@@ -168,6 +182,7 @@ export class Worker {
         console.log('🛑 Stopping MQTT Worker...');
         this.mqttService.disconnect();
         this.batchWriter.stop();
+        connectivityMonitor.stop();
         this.isRunning = false;
         console.log('✅ MQTT Worker stopped');
     }

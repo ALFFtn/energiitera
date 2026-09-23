@@ -15,6 +15,9 @@ const envSchema = z.object({
     WEATHER_CITY: z.string().default('Bandar Lampung'),
     WEATHER_LAT: z.string().transform(Number).default('-5.3971'),
     WEATHER_LON: z.string().transform(Number).default('105.2668'),
+    // Notifikasi Telegram (opsional). Kosongkan untuk menonaktifkan fitur ini.
+    TELEGRAM_BOT_TOKEN: z.string().optional(),
+    TELEGRAM_CHAT_ID: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
