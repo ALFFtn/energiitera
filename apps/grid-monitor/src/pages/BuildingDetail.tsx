@@ -14,7 +14,9 @@ import { TrendChart24h } from '../components/building/TrendChart24h';
 import { useBuildingSensor } from '../hooks/useSocket';
 import { API_URL } from '../config/api';
 
-// No reading for longer than this => sensor is considered offline
+// No reading for longer than this => sensor is considered offline.
+// Samakan dengan STALE_THRESHOLD_MS di apps/api/src/worker/connectivityMonitor.ts
+// (notifikasi Telegram) supaya status di kartu ini dan notifikasi tidak melenceng.
 const OFFLINE_AFTER_MS = 30 * 60 * 1000;
 
 interface Building {

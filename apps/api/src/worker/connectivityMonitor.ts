@@ -5,7 +5,10 @@ import { alertService } from '../services/alertService';
 import { sendTelegramMessage, escapeHtml } from '../services/telegramService';
 import { getAllLatestReadings } from '../services/sensorReadingService';
 
-const STALE_THRESHOLD_MS = 15 * 60 * 1000; // 15 menit, samakan dgn ambang Live/Offline di BuildingDetail.tsx
+// Samakan dengan OFFLINE_AFTER_MS di apps/grid-monitor/src/pages/BuildingDetail.tsx
+// (badge Live/Offline) supaya notifikasi Telegram & status di dashboard konsisten.
+// Kalau salah satu diubah, ubah juga yang satunya.
+const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 menit
 const CHECK_INTERVAL_MS = 60 * 1000; // cek tiap 1 menit
 const FIRST_CHECK_DELAY_MS = 30 * 1000; // beri jeda saat startup sebelum cek pertama
 
