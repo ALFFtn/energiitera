@@ -9,10 +9,6 @@ interface PhaseLoadBalanceProps {
 export function PhaseLoadBalance({ phaseR = 0, phaseS = 0, phaseT = 0, capacity = 300 }: PhaseLoadBalanceProps) {
     const totalLoad = phaseR + phaseS + phaseT;
 
-    const percentR = totalLoad > 0 ? (phaseR / totalLoad) * 100 : 33;
-    const percentS = totalLoad > 0 ? (phaseS / totalLoad) * 100 : 33;
-    const percentT = totalLoad > 0 ? (phaseT / totalLoad) * 100 : 33;
-
     const loadPercentR = Math.min(100, (phaseR / capacity) * 100);
     const loadPercentS = Math.min(100, (phaseS / capacity) * 100);
     const loadPercentT = Math.min(100, (phaseT / capacity) * 100);
@@ -38,7 +34,7 @@ export function PhaseLoadBalance({ phaseR = 0, phaseS = 0, phaseT = 0, capacity 
                             <span className="size-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(34,211,238,0.8)]" /> Phase R
                         </span>
                         <span className="text-slate-900 dark:text-white font-mono tabular-nums">
-                            {phaseR.toFixed(1)} A <span className="text-slate-400 dark:text-slate-500 text-xs ml-1">/ {percentR.toFixed(0)}%</span>
+                            {phaseR.toFixed(1)} A
                         </span>
                     </div>
                     <div className="h-4 w-full bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden border border-slate-200 dark:border-white/5 relative">
@@ -57,7 +53,7 @@ export function PhaseLoadBalance({ phaseR = 0, phaseS = 0, phaseT = 0, capacity 
                             <span className="size-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(250,204,21,0.8)]" /> Phase S
                         </span>
                         <span className="text-slate-900 dark:text-white font-mono tabular-nums">
-                            {phaseS.toFixed(1)} A <span className="text-slate-400 dark:text-slate-500 text-xs ml-1">/ {percentS.toFixed(0)}%</span>
+                            {phaseS.toFixed(1)} A
                         </span>
                     </div>
                     <div className="h-4 w-full bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden border border-slate-200 dark:border-white/5 relative">
@@ -76,7 +72,7 @@ export function PhaseLoadBalance({ phaseR = 0, phaseS = 0, phaseT = 0, capacity 
                             <span className="size-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" /> Phase T
                         </span>
                         <span className="text-slate-900 dark:text-white font-mono tabular-nums">
-                            {phaseT.toFixed(1)} A <span className="text-slate-400 dark:text-slate-500 text-xs ml-1">/ {percentT.toFixed(0)}%</span>
+                            {phaseT.toFixed(1)} A
                         </span>
                     </div>
                     <div className="h-4 w-full bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden border border-slate-200 dark:border-white/5 relative">
