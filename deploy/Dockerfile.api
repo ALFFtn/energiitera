@@ -1,5 +1,5 @@
 # ─── Stage 1: Build TypeScript ────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM mirror.gcr.io/library/node:20-alpine AS builder
 WORKDIR /build
 
 COPY apps/api/package.json ./
@@ -11,7 +11,7 @@ COPY apps/api/tsconfig.json ./
 RUN npx tsc
 
 # ─── Stage 2: Production runtime ──────────────────────────────────
-FROM node:20-alpine AS runner
+FROM mirror.gcr.io/library/node:20-alpine AS runner
 WORKDIR /app
 
 # netcat for MySQL readiness check in entrypoint

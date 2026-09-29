@@ -1,6 +1,6 @@
 # Migration + Seed container — run once on first deploy
 # Usage: docker compose --profile tools run --rm migrate
-FROM node:20-alpine
+FROM mirror.gcr.io/library/node:20-alpine
 WORKDIR /app
 
 RUN apk add --no-cache netcat-openbsd
