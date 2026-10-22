@@ -1,6 +1,6 @@
 # HANDOFF — dashboard-energy (server `listrik`)
 
-Catatan serah-terima untuk AI/engineer berikutnya. Terakhir diperbarui: 2026-09-29.
+Catatan serah-terima untuk AI/engineer berikutnya. Terakhir diperbarui: 2026-10-22.
 **Jangan taruh password/token di file ini.** Kredensial ada di `.env` (gitignored) di root repo.
 
 ## 1. Gambaran sistem
@@ -17,7 +17,7 @@ Berjalan via **Docker Compose** di server ini (Ubuntu 24.04, path `~/dashboard-e
 | `dashboard-api` | API + MQTT worker, port 3001 (internal) |
 | `dashboard-nginx` | Serve build Vite + reverse proxy `/api`, `/socket.io`, `/health`; port 80 |
 
-Database **lokal saja** (container). Tidak ada DB eksternal. Referensi lama ke `REDACTED-HOST-1` sudah dihapus dari file, tapi masih ada di riwayat git.
+Database **lokal saja** (container). Tidak ada DB eksternal. Referensi lama ke `REDACTED-HOST-1` sudah dihapus dari file **dan dari riwayat git** (lihat TODO #7 di §4).
 
 Akses: `http://10.10.2.129` (IP privat server), vhost `listrik.itera.ac.id` sudah di nginx.
 Login demo hasil seed: `admin@gridmonitor.iot` / `password` (ganti untuk produksi).
@@ -64,8 +64,11 @@ Git identity di repo ini di-set lokal: `alfin122130108-cyber`.
 4. **DNS `listrik.itera.ac.id` → `103.211.143.88`**, sedangkan IP publik server (NAT) `103.211.143.226`. Domain belum sampai ke server ini; perlu admin jaringan kampus. Setelah beres: pasang HTTPS (Let's Encrypt) — sekaligus membuat Clipboard API bekerja native.
 5. Broker `emqx.el.itera.ac.id` (= `103.211.143.114`, port 1883/8084) tidak reachable dari server ini (kemungkinan dibatasi ke jaringan kampus). Broker yang dipakai sekarang adalah `10.10.3.20`.
 6. Indikator status sejenis di halaman lain (`CampusMap.tsx`, `BuildingSummary.tsx`, `BuildingGrid.tsx`, `LiveTicker.tsx`) masih berbasis `isConnected` (socket saja), belum cek umur data. Tanyakan user apakah mau disamakan.
-7. Kebersihan repo/keamanan yang belum tuntas:
-   - Kredensial DB lama (`REDACTED-HOST-1`, user `iot`) masih ada di **riwayat git**; membersihkannya butuh rewrite history + force-push (destruktif, butuh persetujuan eksplisit). Password aslinya harus dirotasi oleh pemilik server itu.
+7. ~~Kredensial DB lama di riwayat git.~~ **Selesai 2026-10-22, sebelum push pertama ke GitHub.** Repo `github.com/ALFFtn/energiitera` ternyata **public** dan belum pernah di-push (0 commit di remote) — jadi riwayat dibersihkan dulu via `git-filter-repo` (bukan force-push destruktif ke riwayat publik yang sudah ada, karena memang belum ada). Dua kredensial DB plaintext ditemukan & diredact dari seluruh riwayat (52 commit, ganti SHA semua):
+   - DB lama di host `REDACTED-HOST-1`, user `iot` (sudah diketahui, dicatat di versi HANDOFF sebelumnya — password TIDAK ditulis ulang di sini).
+   - **Temuan baru** (belum pernah tercatat sebelumnya, password TIDAK ditulis ulang di sini): kredensial hosting cPanel user `listrikiteraac_listrikiteraac` di host `103.211.143.22` (juga muncul dalam bentuk host `listrik.itera.ac.id`), db `listrikiteraac_energy`. Nama user/db cocok dengan domain proyek ini — **kemungkinan akun hosting cPanel yang masih aktif, rotasi password-nya kalau belum.** Detail lengkap (untuk verifikasi/rotasi) ada di backup bundle riwayat lama, bukan di sini.
+   - `node_modules/` (13.662 file, pernah ke-commit di `89cbac1` dkk) ikut dibuang dari seluruh riwayat sekalian — ukuran `.git` turun dari 43MB → 2.7MB.
+   - Backup riwayat lama (sebelum rewrite) ada di `dashboard-energy-backup-*.bundle` di scratchpad sesi saat itu, kalau butuh dicek lagi.
    - `tsc -b` di `apps/grid-monitor` melaporkan 1 error lama: import `CommandCenter` tak terpakai di `src/App.tsx`.
    - `npm audit` di image API menunjukkan beberapa vulnerability (belum ditangani).
    - Folder `testpublish/` = skrip publisher MQTT uji (bukan bagian aplikasi).
