@@ -57,6 +57,45 @@ const PARAM_TO_DB_COLUMN: Record<string, string> = {
     temperature:  'temperature',
 };
 
+// "Nice numbers" axis algorithm (Paul Heckbert) — picks round tick values
+// (e.g. 232, 234, 236…) instead of dividing the raw min/max into 5 equal
+// but awkward fractions (e.g. 233.4, 235.7…).
+function niceNumber(range: number, round: boolean): number {
+    if (range <= 0) return 1;
+    const exponent = Math.floor(Math.log10(range));
+    const fraction = range / Math.pow(10, exponent);
+    let niceFraction: number;
+    if (round) {
+        if (fraction < 1.5) niceFraction = 1;
+        else if (fraction < 3) niceFraction = 2;
+        else if (fraction < 7) niceFraction = 5;
+        else niceFraction = 10;
+    } else {
+        if (fraction <= 1) niceFraction = 1;
+        else if (fraction <= 2) niceFraction = 2;
+        else if (fraction <= 5) niceFraction = 5;
+        else niceFraction = 10;
+    }
+    return niceFraction * Math.pow(10, exponent);
+}
+
+function niceTicks(dataMin: number, dataMax: number, targetCount = 5) {
+    if (dataMin === dataMax) {
+        dataMin -= 1;
+        dataMax += 1;
+    }
+    const range = niceNumber(dataMax - dataMin, false);
+    const step = niceNumber(range / (targetCount - 1), true);
+    const niceMin = Math.floor(dataMin / step) * step;
+    const niceMax = Math.ceil(dataMax / step) * step;
+    const decimals = Math.max(0, -Math.floor(Math.log10(step)));
+    const ticks: number[] = [];
+    for (let v = niceMin; v <= niceMax + step / 2; v += step) {
+        ticks.push(Number(v.toFixed(decimals)));
+    }
+    return { niceMin, niceMax, step, decimals, ticks };
+}
+
 // SVG layout constants
 const SVG_W = 600;
 const SVG_H = 300;
@@ -140,19 +179,21 @@ export function ParameterChart(props: ParameterChartProps) {
     const data = history[selectedParam] || [];
     const currentValue = props[selectedParam as keyof ParameterChartProps] ?? 0;
 
-    // Compute dynamic Y range — fits the actual data with padding so the line breathes
+    // Compute dynamic Y range — fits the actual data with padding so the line
+    // breathes, then snapped to "nice" round tick values (see niceTicks above)
+    // instead of 5 awkward fractions of the raw min/max.
     const computeRange = () => {
-        if (data.length < 1) return { minVal: 0, maxVal: 100 };
+        if (data.length < 1) return niceTicks(0, 100);
         const vals = data.map(d => d.value);
         const lo = Math.min(...vals);
         const hi = Math.max(...vals);
         const spread = hi - lo;
         // Give at least 5% of the value or 1 unit of breathing room
         const pad = Math.max(spread * 0.25, Math.abs(lo) * 0.005, 1);
-        return { minVal: lo - pad, maxVal: hi + pad };
+        return niceTicks(lo - pad, hi + pad);
     };
 
-    const { minVal, maxVal } = computeRange();
+    const { niceMin: minVal, niceMax: maxVal, decimals: yDecimals, ticks: yTickValues } = computeRange();
     const valueRange = maxVal - minVal || 1;
 
     // Map a value to SVG Y coordinate
@@ -187,12 +228,10 @@ export function ParameterChart(props: ParameterChartProps) {
 
     const pathData = generatePath();
 
-    // Y-axis labels (5 ticks)
-    const yTicks = [0, 0.25, 0.5, 0.75, 1].map(ratio => ({
-        y: PAD_T + ratio * CHART_H,
-        label: (maxVal - ratio * valueRange).toFixed(
-            valueRange < 5 ? 2 : valueRange < 20 ? 1 : 0
-        ),
+    // Y-axis labels — round "nice" values from computeRange(), not raw fractions
+    const yTicks = yTickValues.map(v => ({
+        y: PAD_T + CHART_H - ((v - minVal) / valueRange) * CHART_H,
+        label: v.toFixed(yDecimals),
     }));
 
     const formatTime = (date: Date): string => {
