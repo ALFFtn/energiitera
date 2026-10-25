@@ -13,7 +13,7 @@ import { ParameterChart } from '../components/building/ParameterChart';
 import { TrendChart24h } from '../components/building/TrendChart24h';
 import { useBuildingSensor } from '../hooks/useSocket';
 import { API_URL } from '../config/api';
-import { formatDateWIB, formatTimeWIB } from '../config/datetime';
+import { formatDateWIB, formatTimeWIB, toWIBDateTimeLocalValue, parseWIBDateTimeLocal } from '../config/datetime';
 
 // No reading for longer than this => sensor is considered offline.
 // Samakan dengan STALE_THRESHOLD_MS di apps/api/src/worker/connectivityMonitor.ts
@@ -92,18 +92,18 @@ export function BuildingDetail() {
 
     const applyExportPreset = (preset: 'today' | '24h' | '7d' | '30d') => {
         const now = new Date();
-        const end = now.toISOString().slice(0, 16);
+        const end = toWIBDateTimeLocalValue(now);
         let start: string;
         if (preset === 'today') {
-            const todayStart = new Date(now);
-            todayStart.setHours(0, 0, 0, 0);
-            start = todayStart.toISOString().slice(0, 16);
+            // Midnight in Bandar Lampung (WIB), not midnight in the browser's
+            // own timezone — reuse the YYYY-MM-DD WIB already computed for `end`.
+            start = `${end.slice(0, 10)}T00:00`;
         } else if (preset === '24h') {
-            start = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+            start = toWIBDateTimeLocalValue(new Date(now.getTime() - 24 * 60 * 60 * 1000));
         } else if (preset === '7d') {
-            start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+            start = toWIBDateTimeLocalValue(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000));
         } else {
-            start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+            start = toWIBDateTimeLocalValue(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000));
         }
         setExportStartDate(start);
         setExportEndDate(end);
@@ -119,8 +119,8 @@ export function BuildingDetail() {
         try {
             let url = `${API_URL}/api/buildings/${building.id}/readings/export`;
             const params = new URLSearchParams();
-            if (exportStartDate) params.set('startDate', new Date(exportStartDate).toISOString());
-            if (exportEndDate) params.set('endDate', new Date(exportEndDate).toISOString());
+            if (exportStartDate) params.set('startDate', parseWIBDateTimeLocal(exportStartDate).toISOString());
+            if (exportEndDate) params.set('endDate', parseWIBDateTimeLocal(exportEndDate).toISOString());
             if (params.toString()) url += `?${params.toString()}`;
 
             const response = await fetch(url, {
