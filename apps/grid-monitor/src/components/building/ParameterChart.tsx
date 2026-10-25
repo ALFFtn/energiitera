@@ -195,6 +195,27 @@ export function ParameterChart(props: ParameterChartProps) {
         ),
     }));
 
+    const formatTime = (date: Date): string => {
+        const range = TIME_RANGES.find(r => r.key === timeRange)!;
+        if (range.hours <= 24) {
+            return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        if (range.hours <= 72) {
+            return date.toLocaleString('id-ID', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+        return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' });
+    };
+
+    // X-axis ticks (time) — evenly spaced across the data so the middle of
+    // the chart has a readable time reference, not just the two end labels.
+    const numXTicks = Math.min(6, data.length);
+    const xTicks = numXTicks >= 2
+        ? Array.from({ length: numXTicks }, (_, i) => {
+            const idx = Math.round((i / (numXTicks - 1)) * (data.length - 1));
+            return { x: toX(idx), label: formatTime(data[idx].time) };
+        })
+        : [];
+
     const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
         if (!pathData?.points || !svgRef.current) return;
         const rect = svgRef.current.getBoundingClientRect();
@@ -206,17 +227,6 @@ export function ParameterChart(props: ParameterChartProps) {
             if (d < minDist) { minDist = d; closest = i; }
         }
         setHoverIdx(closest);
-    };
-
-    const formatTime = (date: Date): string => {
-        const range = TIME_RANGES.find(r => r.key === timeRange)!;
-        if (range.hours <= 24) {
-            return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
-        if (range.hours <= 72) {
-            return date.toLocaleString('id-ID', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-        }
-        return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' });
     };
 
     return (
@@ -332,6 +342,18 @@ export function ParameterChart(props: ParameterChartProps) {
                             </g>
                         ))}
 
+                        {/* Vertical grid lines (time) */}
+                        {xTicks.map(({ x }, i) => (
+                            <line
+                                key={i}
+                                x1={x} y1={PAD_T} x2={x} y2={PAD_T + CHART_H}
+                                stroke="currentColor"
+                                strokeOpacity="0.12"
+                                strokeDasharray="4,4"
+                                className="text-slate-300 dark:text-slate-600"
+                            />
+                        ))}
+
                         {/* Fill */}
                         {pathData?.fillPath && (
                             <path d={pathData.fillPath} fill={`url(#grad-${selectedParam})`} />
@@ -393,30 +415,22 @@ export function ParameterChart(props: ParameterChartProps) {
                             </>
                         )}
 
-                        {/* Time axis labels (inside SVG so they scale with chart) */}
-                        {data.length >= 2 && (
-                            <>
-                                <text
-                                    x={PAD_L}
-                                    y={SVG_H - 6}
-                                    fontSize="9"
-                                    className="fill-slate-400 dark:fill-slate-500"
-                                    fill="currentColor"
-                                >
-                                    {formatTime(data[0].time)}
-                                </text>
-                                <text
-                                    x={SVG_W - PAD_R}
-                                    y={SVG_H - 6}
-                                    fontSize="9"
-                                    textAnchor="end"
-                                    className="fill-slate-400 dark:fill-slate-500"
-                                    fill="currentColor"
-                                >
-                                    {formatTime(data[data.length - 1].time)}
-                                </text>
-                            </>
-                        )}
+                        {/* Time axis labels (inside SVG so they scale with chart) —
+                            spread across the width, not just the two end points,
+                            so the middle of the chart has a time reference too. */}
+                        {xTicks.map(({ x, label }, i) => (
+                            <text
+                                key={i}
+                                x={x}
+                                y={SVG_H - 6}
+                                fontSize="9"
+                                textAnchor={i === 0 ? 'start' : i === xTicks.length - 1 ? 'end' : 'middle'}
+                                className="fill-slate-400 dark:fill-slate-500"
+                                fill="currentColor"
+                            >
+                                {label}
+                            </text>
+                        ))}
                     </svg>
                 )}
 
