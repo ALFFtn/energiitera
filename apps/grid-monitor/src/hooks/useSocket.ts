@@ -36,6 +36,37 @@ function nonZero(next: number | undefined, prev: number): number {
     return (next !== undefined && next !== 0) ? next : prev;
 }
 
+// The Schneider IEM 3255 meter used for LVMDP monitoring doesn't report true
+// THD (not among its registers — see the project proposal's register list),
+// so thd_v/thd_i from the sensor are always null/0. Estimate both from the
+// electrical parameters we do have, as a rough proxy rather than leaving the
+// THD card permanently blank:
+//
+// - Current THD: derived from Power Factor assuming the displacement factor
+//   (cos φ) is ~1, i.e. attributing PF's deviation from unity to harmonic
+//   distortion rather than phase shift. Standard relation:
+//     PF = DPF / sqrt(1 + THD_I²)  →  THD_I = sqrt((1/PF)² − 1)
+//   This is a common fallback approximation on meters without a harmonic
+//   analyzer; it is NOT a measured value.
+// - Voltage THD: no comparable single-variable formula exists for voltage
+//   distortion, so used voltage UNBALANCE between the three phases (NEMA
+//   definition: max deviation from the average, as % of the average) as the
+//   closest available proxy — real voltage THD is normally small and often
+//   tracks poor phase balance in practice, but this is still an estimate of
+//   a different (related) phenomenon, not a true harmonic measurement.
+function estimateThdCurrent(powerFactor: number): number {
+    if (!powerFactor || powerFactor <= 0 || powerFactor > 1) return 0;
+    const thd = Math.sqrt(Math.max(0, (1 / powerFactor) ** 2 - 1)) * 100;
+    return Math.min(100, thd);
+}
+
+function estimateThdVoltage(vr: number, vs: number, vt: number): number {
+    const avg = (vr + vs + vt) / 3;
+    if (!avg) return 0;
+    const maxDeviation = Math.max(Math.abs(vr - avg), Math.abs(vs - avg), Math.abs(vt - avg));
+    return Math.min(100, (maxDeviation / avg) * 100);
+}
+
 function getBuildingSensorCacheKey(buildingId?: string, buildingCode?: string): string | null {
     if (buildingId) return `building-sensor:${buildingId}`;
     if (buildingCode) return `building-sensor:${buildingCode.toLowerCase()}`;
@@ -330,8 +361,12 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
         powerFactor: sensorData.power_factor || 0,
         frequency: sensorData.frequency || 50,
         temperature: sensorData.temperature || 0,
-        thdVoltage: sensorData.thd_v || 0,
-        thdCurrent: sensorData.thd_i || 0,
+        // Prefer a real sensor-reported value if one ever shows up; otherwise
+        // estimate from available electrical parameters (see functions above).
+        thdVoltage: sensorData.thd_v || estimateThdVoltage(
+            sensorData.voltage_r || 0, sensorData.voltage_s || 0, sensorData.voltage_t || 0
+        ),
+        thdCurrent: sensorData.thd_i || estimateThdCurrent(sensorData.power_factor || 0),
     };
 }
 

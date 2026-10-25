@@ -101,7 +101,12 @@ export function SignalQuality({ frequency = 50, thdVoltage = 0, thdCurrent = 0 }
             <div className="rounded-2xl p-5 flex-1 flex flex-col justify-between bg-white dark:bg-card-dark/75 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-xl transition-colors">
                 <div className="flex justify-between items-start">
                     <div>
-                        <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest">THD (Harmonics)</p>
+                        <p
+                            className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest"
+                            title="Meter tidak mengukur THD langsung — nilai diestimasi dari Power Factor (arus) dan ketidakseimbangan tegangan antar fasa (tegangan)."
+                        >
+                            THD (Harmonics) <span className="font-normal normal-case tracking-normal text-slate-400 dark:text-slate-500">· estimasi</span>
+                        </p>
                         <div className="flex gap-4 mt-1">
                             <p className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
                                 V: {thdVoltage.toFixed(1)}<span className="text-xs font-medium text-slate-400 dark:text-slate-500">%</span>
