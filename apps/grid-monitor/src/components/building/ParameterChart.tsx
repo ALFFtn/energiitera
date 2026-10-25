@@ -96,15 +96,20 @@ function niceTicks(dataMin: number, dataMax: number, targetCount = 5) {
     return { niceMin, niceMax, step, decimals, ticks };
 }
 
-// SVG layout constants
-const SVG_W = 600;
-const SVG_H = 300;
+// SVG layout constants — padding is fixed in px, but the chart's own
+// width/height track the real rendered container size (see ResizeObserver
+// below) instead of a hardcoded 600x300 viewBox. The old fixed viewBox
+// combined with preserveAspectRatio="none" stretched everything — text,
+// strokes, dots — non-uniformly to fill whatever wide/short card it was
+// actually rendered in, which is what made the axis labels look "penyet"
+// (squashed). Matching the viewBox 1:1 to the real pixel size removes
+// that distortion entirely.
 const PAD_L = 48;  // left (Y labels)
 const PAD_R = 12;
 const PAD_T = 16;
 const PAD_B = 28;  // bottom (time labels)
-const CHART_W = SVG_W - PAD_L - PAD_R;
-const CHART_H = SVG_H - PAD_T - PAD_B;
+const DEFAULT_SVG_W = 600;
+const DEFAULT_SVG_H = 280;
 
 export function ParameterChart(props: ParameterChartProps) {
     const [selectedParam, setSelectedParam] = useState<string>('voltage_r');
@@ -113,6 +118,32 @@ export function ParameterChart(props: ParameterChartProps) {
     const prevValuesRef = useRef<Record<string, number>>({});
     const [hoverIdx, setHoverIdx] = useState<number | null>(null);
     const svgRef = useRef<SVGSVGElement>(null);
+    const chartContainerRef = useRef<HTMLDivElement>(null);
+    const [svgSize, setSvgSize] = useState({ width: DEFAULT_SVG_W, height: DEFAULT_SVG_H });
+
+    // Track the chart container's real rendered size so the SVG viewBox can
+    // match it exactly (no distortion from preserveAspectRatio="none").
+    useEffect(() => {
+        const el = chartContainerRef.current;
+        if (!el) return;
+
+        const update = () => {
+            const { width, height } = el.getBoundingClientRect();
+            if (width > 0 && height > 0) {
+                setSvgSize(prev => (prev.width === width && prev.height === height ? prev : { width, height }));
+            }
+        };
+
+        update();
+        const observer = new ResizeObserver(update);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
+    const SVG_W = svgSize.width;
+    const SVG_H = svgSize.height;
+    const CHART_W = SVG_W - PAD_L - PAD_R;
+    const CHART_H = SVG_H - PAD_T - PAD_B;
 
     // Fetch historical data whenever buildingId or timeRange changes
     useEffect(() => {
@@ -332,7 +363,7 @@ export function ParameterChart(props: ParameterChartProps) {
             </div>
 
             {/* Chart */}
-            <div className="relative w-full bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden transition-colors" style={{ height: '280px' }}>
+            <div ref={chartContainerRef} className="relative w-full bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden transition-colors" style={{ height: '280px' }}>
                 {data.length < 2 ? (
                     <div className="absolute inset-0 flex items-center justify-center text-slate-400 dark:text-slate-500">
                         <div className="text-center">
