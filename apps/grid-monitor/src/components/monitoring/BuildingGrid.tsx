@@ -11,6 +11,10 @@ interface BuildingProps {
     totalPower: number;
     powerFactor: number;
     status: 'operational' | 'warning' | 'critical' | 'offline';
+    // true once real sensor data (live socket or initial REST fetch) has
+    // arrived for this building; while false, totalPower/powerFactor are
+    // just placeholders (0 / 0.95) and must not be shown as real readings.
+    hasLiveData?: boolean;
 }
 
 function BuildingCardMenu({ buildingId, buildingName, onDelete }: { buildingId: string; buildingName: string; onDelete: () => void }) {
@@ -79,7 +83,7 @@ function BuildingCardMenu({ buildingId, buildingName, onDelete }: { buildingId: 
     );
 }
 
-function BuildingCard({ id, name, description, totalPower, powerFactor, status }: BuildingProps) {
+function BuildingCard({ id, name, description, totalPower, powerFactor, status, hasLiveData }: BuildingProps) {
     const isOffline = status === 'offline';
     const isCritical = status === 'critical';
     const isWarning = status === 'warning';
@@ -141,13 +145,17 @@ function BuildingCard({ id, name, description, totalPower, powerFactor, status }
                     <div>
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Load</p>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">{totalPower.toFixed(1)}</span>
+                            <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">
+                                {hasLiveData ? totalPower.toFixed(1) : '--'}
+                            </span>
                             <span className="text-xs text-slate-500">kW</span>
                         </div>
                     </div>
                     <div>
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">PF</p>
-                        <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">{powerFactor.toFixed(2)}</span>
+                        <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">
+                            {hasLiveData ? powerFactor.toFixed(2) : '--'}
+                        </span>
                     </div>
                 </div>
 
@@ -197,6 +205,7 @@ function BuildingCardWithLiveData({ liveData, ...props }: BuildingCardWithLiveDa
             totalPower={totalPower}
             powerFactor={powerFactor}
             status={status}
+            hasLiveData={liveData != null}
         />
     );
 }
