@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSocket } from '../../hooks/useSocket';
 import { API_URL, getAuthHeaders } from '../../config/api';
+import { formatTimeWIB } from '../../config/datetime';
 
 interface Alert {
     id: string;
@@ -76,7 +77,7 @@ export function AlertFeed() {
 
     const formatTime = (ts: string) => {
         const d = new Date(ts);
-        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return formatTimeWIB(d, { hour: '2-digit', minute: '2-digit' });
     };
 
     return (

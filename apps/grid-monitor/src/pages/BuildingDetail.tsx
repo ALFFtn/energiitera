@@ -13,6 +13,7 @@ import { ParameterChart } from '../components/building/ParameterChart';
 import { TrendChart24h } from '../components/building/TrendChart24h';
 import { useBuildingSensor } from '../hooks/useSocket';
 import { API_URL } from '../config/api';
+import { formatDateWIB, formatTimeWIB } from '../config/datetime';
 
 // No reading for longer than this => sensor is considered offline.
 // Samakan dengan STALE_THRESHOLD_MS di apps/api/src/worker/connectivityMonitor.ts
@@ -148,8 +149,8 @@ export function BuildingDetail() {
         // Fallback: Export current snapshot
         const SQRT3 = Math.sqrt(3);
         const timestamp = new Date().toISOString();
-        const dateStr = new Date().toLocaleDateString('id-ID');
-        const timeStr = new Date().toLocaleTimeString('id-ID');
+        const dateStr = formatDateWIB(new Date());
+        const timeStr = formatTimeWIB(new Date());
 
         const voltageRS = ((voltage.r + voltage.s) / 2) * SQRT3;
         const voltageST = ((voltage.s + voltage.t) / 2) * SQRT3;

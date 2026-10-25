@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../../config/api';
+import { formatTimeWIB } from '../../config/datetime';
 
 interface TrendChart24hProps {
     currentValue: number;
@@ -155,7 +156,7 @@ export function TrendChart24h({
         if (history.length < 2) return [];
         const first = history[0].time;
         return [
-            first.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+            formatTimeWIB(first, { hour: '2-digit', minute: '2-digit' }),
             'Now'
         ];
     };
@@ -283,7 +284,7 @@ export function TrendChart24h({
                     >
                         <div className="font-bold tabular-nums">{history[hoverIdx].value.toFixed(2)} {unit}</div>
                         <div className="text-slate-400 text-[10px]">
-                            {history[hoverIdx].time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            {formatTimeWIB(history[hoverIdx].time, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                         </div>
                     </div>
                 )}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../../config/api';
+import { formatTimeWIB, formatDateWIB, formatDateTimeWIB } from '../../config/datetime';
 
 interface DataPoint {
     time: Date;
@@ -313,12 +314,12 @@ export function ParameterChart(props: ParameterChartProps) {
     const formatTime = (date: Date): string => {
         const range = TIME_RANGES.find(r => r.key === timeRange)!;
         if (range.hours <= 24) {
-            return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            return formatTimeWIB(date, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
         if (range.hours <= 72) {
-            return date.toLocaleString('id-ID', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+            return formatDateTimeWIB(date, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
         }
-        return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' });
+        return formatDateWIB(date, { day: '2-digit', month: 'short', year: '2-digit' });
     };
 
     // X-axis ticks (time) — evenly spaced across the data so the middle of

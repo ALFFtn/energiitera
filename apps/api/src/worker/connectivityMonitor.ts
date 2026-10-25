@@ -4,6 +4,7 @@ import { eq, and, isNull } from 'drizzle-orm';
 import { alertService } from '../services/alertService';
 import { sendTelegramMessage, escapeHtml } from '../services/telegramService';
 import { getAllLatestReadings } from '../services/sensorReadingService';
+import { formatShortDateTimeWIB } from '../utils/datetime';
 
 // Samakan dengan OFFLINE_AFTER_MS di apps/grid-monitor/src/pages/BuildingDetail.tsx
 // (badge Live/Offline) supaya notifikasi Telegram & status di dashboard konsisten.
@@ -61,7 +62,7 @@ export class ConnectivityMonitor {
         await sendTelegramMessage(
             `🔴 <b>MQTT Worker Terputus</b>\n` +
             `Worker API kehilangan koneksi ke broker MQTT. Data sensor berhenti masuk.\n` +
-            `Waktu: ${this.formatTime(new Date())} WIB`
+            `Waktu: ${this.formatTime(new Date())}`
         );
     }
 
@@ -74,7 +75,7 @@ export class ConnectivityMonitor {
         await sendTelegramMessage(
             `🟢 <b>MQTT Worker Pulih</b>\n` +
             `Koneksi ke broker MQTT sudah kembali normal.\n` +
-            `Waktu: ${this.formatTime(new Date())} WIB`
+            `Waktu: ${this.formatTime(new Date())}`
         );
     }
 
@@ -103,7 +104,7 @@ export class ConnectivityMonitor {
                 await sendTelegramMessage(
                     `🔴 <b>${escapeHtml(buildingName)} Offline</b>\n` +
                     `Tidak ada data masuk lebih dari ${STALE_THRESHOLD_MS / 60000} menit.\n` +
-                    `Data terakhir: ${this.formatTime(new Date(reading.timestamp))} WIB`
+                    `Data terakhir: ${this.formatTime(new Date(reading.timestamp))}`
                 );
             } else if (!isStale && alreadyFlagged) {
                 const alertId = await this.getActiveAlertId(buildingId, ALERT_TITLE_BUILDING_OFFLINE);
@@ -112,7 +113,7 @@ export class ConnectivityMonitor {
                 await sendTelegramMessage(
                     `🟢 <b>${escapeHtml(buildingName)} Online Kembali</b>\n` +
                     `Data sensor sudah masuk lagi.\n` +
-                    `Waktu: ${this.formatTime(new Date())} WIB`
+                    `Waktu: ${this.formatTime(new Date())}`
                 );
             }
         }
@@ -132,14 +133,8 @@ export class ConnectivityMonitor {
     }
 
     private formatTime(date: Date): string {
-        return date.toLocaleString('id-ID', {
-            timeZone: 'Asia/Jakarta',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
+        // Sudah termasuk suffix " WIB" — lihat formatShortDateTimeWIB di utils/datetime.ts
+        return formatShortDateTimeWIB(date);
     }
 }
 

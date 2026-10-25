@@ -1,6 +1,7 @@
 import { db } from '../config/database';
 import { buildingSensorReadings, buildings } from '../db/schema';
 import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
+import { formatDateTimeWIB } from '../utils/datetime';
 
 interface SensorData {
     voltage_r?: number;
@@ -260,7 +261,7 @@ export async function exportReadingsAsCSV(
     ];
 
     const rows = readings.map(r => [
-        r.timestamp.toISOString(),
+        formatDateTimeWIB(r.timestamp),
         r.voltageR || '',
         r.voltageS || '',
         r.voltageT || '',
