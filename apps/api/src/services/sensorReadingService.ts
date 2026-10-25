@@ -164,6 +164,7 @@ export async function getSensorReadingsBucketed(
     temperature: string | null;
     thdVoltage: string | null;
     thdCurrent: string | null;
+    energy: string | null;
 }>> {
     const bs = bucketSeconds;
     return await db.select({
@@ -180,6 +181,9 @@ export async function getSensorReadingsBucketed(
         temperature: sql<string>`CAST(AVG(CAST(${buildingSensorReadings.temperature} AS DECIMAL(10,4))) AS CHAR)`,
         thdVoltage:  sql<string>`CAST(AVG(CAST(${buildingSensorReadings.thdVoltage}  AS DECIMAL(10,4))) AS CHAR)`,
         thdCurrent:  sql<string>`CAST(AVG(CAST(${buildingSensorReadings.thdCurrent}  AS DECIMAL(10,4))) AS CHAR)`,
+        // Energy is a cumulative counter, not an instantaneous reading — take
+        // the last (max) value in the bucket rather than averaging it.
+        energy:      sql<string>`CAST(MAX(CAST(${buildingSensorReadings.energy}      AS DECIMAL(10,4))) AS CHAR)`,
     })
     .from(buildingSensorReadings)
     .where(and(
@@ -241,15 +245,37 @@ export async function getAllLatestReadings(): Promise<Array<{
     return results;
 }
 
-// Export readings as CSV-ready array
+// Export bucket size: agregat per 5 menit (rata-rata), bukan baris mentah
+// per ~10 detik — permintaan klien, sekaligus bikin file jauh lebih ringkas
+// untuk rentang panjang (30 hari @ 5 menit ≈ 8.640 baris, vs sebelumnya
+// cuma sanggup ~27 jam data mentah dalam batas 10.000 baris).
+const EXPORT_BUCKET_SECONDS = 300;
+
+// Export readings as CSV-ready array — selalu diagregasi per 5 menit.
 export async function exportReadingsAsCSV(
     buildingId: string,
     startDate?: Date,
     endDate?: Date
 ): Promise<string[][]> {
-    const readings = startDate && endDate
-        ? await getSensorReadingsInRange(buildingId, startDate, endDate, 50000)
-        : await getSensorReadings(buildingId, { limit: 10000 });
+    let from = startDate;
+    let to = endDate;
+
+    if (!from || !to) {
+        // Tanpa rentang eksplisit = ekspor semua data yang ada: cari rentang
+        // tanggal sungguhan dari data yang tersimpan, bukan sekadar N baris
+        // terakhir (yang dulu, dgn data mentah, cuma menjangkau ~1 hari).
+        const [bounds] = await db.select({
+            minTs: sql<Date | null>`MIN(${buildingSensorReadings.timestamp})`,
+            maxTs: sql<Date | null>`MAX(${buildingSensorReadings.timestamp})`,
+        }).from(buildingSensorReadings).where(eq(buildingSensorReadings.buildingId, buildingId));
+
+        if (!bounds?.minTs || !bounds?.maxTs) return [['Timestamp']]; // tidak ada data sama sekali
+
+        from = from ?? new Date(bounds.minTs);
+        to = to ?? new Date(bounds.maxTs);
+    }
+
+    const readings = await getSensorReadingsBucketed(buildingId, from, to, EXPORT_BUCKET_SECONDS);
 
     const headers = [
         'Timestamp',
@@ -261,7 +287,10 @@ export async function exportReadingsAsCSV(
     ];
 
     const rows = readings.map(r => [
-        formatDateTimeWIB(r.timestamp),
+        // r.timestamp dari getSensorReadingsBucketed() adalah string mentah
+        // MySQL ("YYYY-MM-DD HH:mm:ss"), bukan objek Date (beda dgn query
+        // baris-mentah) -- harus dibungkus new Date() dulu.
+        formatDateTimeWIB(new Date(r.timestamp)),
         r.voltageR || '',
         r.voltageS || '',
         r.voltageT || '',
