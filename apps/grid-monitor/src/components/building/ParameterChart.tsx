@@ -20,10 +20,24 @@ interface ParameterChartProps {
     buildingId?: string;
 }
 
+const SQRT3 = Math.sqrt(3);
+// L-L (line-to-line) voltages aren't stored directly — derived the same way
+// as the live gauge (LineVoltageGauge.tsx): average of the two adjacent L-N
+// phases × √3. Colors mirror the "leading phase" of each pair, same
+// convention as that gauge's R-S/S-T/T-R badges.
+const LL_PAIRS: Record<string, ['voltage_r' | 'voltage_s' | 'voltage_t', 'voltage_r' | 'voltage_s' | 'voltage_t']> = {
+    voltage_rs: ['voltage_r', 'voltage_s'],
+    voltage_st: ['voltage_s', 'voltage_t'],
+    voltage_tr: ['voltage_t', 'voltage_r'],
+};
+
 const PARAMETER_CONFIG: Record<string, { label: string; unit: string; color: string }> = {
     voltage_r:    { label: 'Voltage Phase R', unit: 'V',  color: '#22d3ee' },
     voltage_s:    { label: 'Voltage Phase S', unit: 'V',  color: '#facc15' },
     voltage_t:    { label: 'Voltage Phase T', unit: 'V',  color: '#3b82f6' },
+    voltage_rs:   { label: 'Voltage L-L R-S', unit: 'V',  color: '#22d3ee' },
+    voltage_st:   { label: 'Voltage L-L S-T', unit: 'V',  color: '#facc15' },
+    voltage_tr:   { label: 'Voltage L-L T-R', unit: 'V',  color: '#3b82f6' },
     current_r:    { label: 'Current Phase R', unit: 'A',  color: '#22d3ee' },
     current_s:    { label: 'Current Phase S', unit: 'A',  color: '#facc15' },
     current_t:    { label: 'Current Phase T', unit: 'A',  color: '#3b82f6' },
@@ -169,6 +183,7 @@ export function ParameterChart(props: ParameterChartProps) {
                 const allHistory: Record<string, DataPoint[]> = {};
                 for (const r of readings) {
                     const ts = new Date(r.timestamp);
+                    const lnValues: Partial<Record<'voltage_r' | 'voltage_s' | 'voltage_t', number>> = {};
                     for (const [paramKey, dbCol] of Object.entries(PARAM_TO_DB_COLUMN)) {
                         const raw = r[dbCol];
                         if (raw != null) {
@@ -176,7 +191,19 @@ export function ParameterChart(props: ParameterChartProps) {
                             if (!isNaN(value) && value !== 0) {
                                 if (!allHistory[paramKey]) allHistory[paramKey] = [];
                                 allHistory[paramKey].push({ time: ts, value });
+                                if (paramKey === 'voltage_r' || paramKey === 'voltage_s' || paramKey === 'voltage_t') {
+                                    lnValues[paramKey] = value;
+                                }
                             }
+                        }
+                    }
+                    // Derive L-L voltages from the L-N pair for this same reading
+                    for (const [llKey, [a, b]] of Object.entries(LL_PAIRS)) {
+                        const va = lnValues[a];
+                        const vb = lnValues[b];
+                        if (va != null && vb != null) {
+                            if (!allHistory[llKey]) allHistory[llKey] = [];
+                            allHistory[llKey].push({ time: ts, value: ((va + vb) / 2) * SQRT3 });
                         }
                     }
                 }
@@ -201,6 +228,20 @@ export function ParameterChart(props: ParameterChartProps) {
             }
         });
 
+        // Derive live L-L voltages from whatever L-N phases are currently known
+        for (const [llKey, [a, b]] of Object.entries(LL_PAIRS)) {
+            const va = props[a];
+            const vb = props[b];
+            if (va && vb) {
+                const value = ((va + vb) / 2) * SQRT3;
+                if (value !== prevValuesRef.current[llKey]) {
+                    const currentHistory = history[llKey] || [];
+                    updates[llKey] = [...currentHistory, { time: now, value }].slice(-MAX_LIVE_POINTS);
+                    prevValuesRef.current[llKey] = value;
+                }
+            }
+        }
+
         if (Object.keys(updates).length > 0) {
             setHistory(prev => ({ ...prev, ...updates }));
         }
@@ -208,7 +249,11 @@ export function ParameterChart(props: ParameterChartProps) {
 
     const config = PARAMETER_CONFIG[selectedParam];
     const data = history[selectedParam] || [];
-    const currentValue = props[selectedParam as keyof ParameterChartProps] ?? 0;
+    // L-L voltages aren't a direct prop — derive the live value from its L-N pair
+    const llPair = LL_PAIRS[selectedParam];
+    const currentValue = llPair
+        ? (props[llPair[0]] && props[llPair[1]] ? ((props[llPair[0]]! + props[llPair[1]]!) / 2) * SQRT3 : 0)
+        : (props[selectedParam as keyof ParameterChartProps] ?? 0);
 
     // Compute dynamic Y range — fits the actual data with padding so the line
     // breathes, then snapped to "nice" round tick values (see niceTicks above)
@@ -330,10 +375,15 @@ export function ParameterChart(props: ParameterChartProps) {
                         onChange={(e) => { setSelectedParam(e.target.value); setHoverIdx(null); }}
                         className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                     >
-                        <optgroup label="Voltage">
+                        <optgroup label="Voltage (L-N)">
                             <option value="voltage_r">Voltage Phase R</option>
                             <option value="voltage_s">Voltage Phase S</option>
                             <option value="voltage_t">Voltage Phase T</option>
+                        </optgroup>
+                        <optgroup label="Voltage (L-L)">
+                            <option value="voltage_rs">Voltage L-L R-S</option>
+                            <option value="voltage_st">Voltage L-L S-T</option>
+                            <option value="voltage_tr">Voltage L-L T-R</option>
                         </optgroup>
                         <optgroup label="Current">
                             <option value="current_r">Current Phase R</option>
