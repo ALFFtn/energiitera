@@ -5,6 +5,7 @@ import { CommandCenter } from './pages/CommandCenter';
 import { Monitoring } from './pages/Monitoring';
 import { BuildingDetail } from './pages/BuildingDetail';
 import { LoginPage } from './pages/LoginPage';
+import { GuestDemo } from './pages/GuestDemo';
 import { AuthGuard } from './components/common/AuthGuard';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
 
           {/* Public */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/demo" element={<GuestDemo />} />
 
           {/* Protected */}
           <Route path="/dashboard" element={<Navigate to="/monitoring" replace />} />
