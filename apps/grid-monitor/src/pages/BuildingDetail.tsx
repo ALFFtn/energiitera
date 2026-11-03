@@ -7,7 +7,6 @@ import { LineVoltageGauge } from '../components/panel/LineVoltageGauge';
 import { PowerFactorGauge } from '../components/panel/PowerFactorGauge';
 import { PhaseLoadBalance } from '../components/panel/PhaseLoadBalance';
 import { SignalQuality } from '../components/panel/SignalQuality';
-import { EventLog } from '../components/panel/EventLog';
 import { ConfigureSensorModal } from '../components/building/ConfigureSensorModal';
 import { ParameterChart } from '../components/building/ParameterChart';
 import { TrendChart24h } from '../components/building/TrendChart24h';
@@ -428,8 +427,8 @@ export function BuildingDetail() {
                     />
                 </div>
 
-                {/* Parameter History Chart + Event Log */}
-                <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6 mb-8">
+                {/* Parameter History Chart */}
+                <div className="grid grid-cols-1 gap-6 mb-8">
                     <ParameterChart
                         voltage_r={voltage.r}
                         voltage_s={voltage.s}
@@ -445,7 +444,6 @@ export function BuildingDetail() {
                         energy_export={energyExport}
                         buildingId={buildingId}
                     />
-                    <EventLog />
                 </div>
 
                 {/* Quick Actions */}
