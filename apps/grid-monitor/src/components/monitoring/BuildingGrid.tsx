@@ -316,7 +316,7 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
 
     if (isLoading) {
         return (
-            <div className="xl:col-span-2 flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center gap-3">
                     <span className="material-symbols-outlined animate-spin text-primary text-[32px]">progress_activity</span>
                     <p className="text-slate-500">Loading buildings...</p>
@@ -327,7 +327,7 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
 
     if (error) {
         return (
-            <div className="xl:col-span-2 flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center gap-3 text-center">
                     <span className="material-symbols-outlined text-red-500 text-[32px]">error</span>
                     <p className="text-red-500">{error}</p>
@@ -344,7 +344,7 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
 
     if (totalBuildings === 0) {
         return (
-            <div className="xl:col-span-2 flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center gap-3 text-center">
                     <span className="material-symbols-outlined text-slate-400 text-[48px]">apartment</span>
                     <p className="text-slate-500">No buildings found</p>
@@ -355,7 +355,7 @@ export function BuildingGrid({ selectedZone }: BuildingGridProps) {
     }
 
     return (
-        <div className="xl:col-span-2 flex flex-col gap-6">
+        <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white">

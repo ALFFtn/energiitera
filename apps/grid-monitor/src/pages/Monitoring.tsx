@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { MonitoringHeader } from '../components/monitoring/MonitoringHeader';
 import { MonitoringSidebar } from '../components/monitoring/MonitoringSidebar';
 import { BuildingGrid } from '../components/monitoring/BuildingGrid';
-import { MonitoringRightSidebar } from '../components/monitoring/MonitoringRightSidebar';
 import { AddBuildingModal } from '../components/monitoring/AddBuildingModal';
 import { useAuth } from '../components/common/AuthGuard';
 
@@ -80,11 +79,8 @@ export function Monitoring() {
                             </div>
                         </div>
 
-                        {/* Main Grid Layout */}
-                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                            <BuildingGrid key={refreshKey} selectedZone={selectedZone} />
-                            <MonitoringRightSidebar />
-                        </div>
+                        {/* Main Content */}
+                        <BuildingGrid key={refreshKey} selectedZone={selectedZone} />
 
                         <footer className="mt-12 mb-6 text-center text-xs text-slate-400 dark:text-slate-600">
                             <p>© 2024 PowerGrid OS. All systems nominal.</p>
