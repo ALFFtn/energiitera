@@ -32,6 +32,13 @@ const refreshSchema = z.object({
     }),
 });
 
+const changePasswordSchema = z.object({
+    body: z.object({
+        currentPassword: z.string().min(1, 'Current password is required'),
+        newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+    }),
+});
+
 // Routes
 router.post('/register', validate(registerSchema), async (req, res, next) => {
     try {
@@ -82,6 +89,19 @@ router.get('/me', authenticate, async (req, res, next) => {
     try {
         const profile = await authService.getProfile(req.user!.userId);
         res.json({ success: true, data: profile });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Ganti password sendiri -- siapa pun yang login boleh, tidak perlu admin.
+// Tidak pakai req.body mentah (sama alasannya dgn /register di atas):
+// destructure field yang dipakai saja.
+router.put('/change-password', authenticate, validate(changePasswordSchema), async (req, res, next) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        await authService.changePassword(req.user!.userId, currentPassword, newPassword);
+        res.json({ success: true, message: 'Password changed successfully' });
     } catch (error) {
         next(error);
     }

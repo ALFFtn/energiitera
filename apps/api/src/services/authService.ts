@@ -176,6 +176,32 @@ export class AuthService {
         };
     }
 
+    async changePassword(userId: string, currentPassword: string, newPassword: string) {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+        });
+
+        if (!user) {
+            throw new AppError('User not found', 404);
+        }
+
+        const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!isValid) {
+            throw new AppError('Current password is incorrect', 401);
+        }
+
+        const passwordHash = await bcrypt.hash(newPassword, 12);
+        await db.update(users)
+            .set({ passwordHash, updatedAt: new Date() })
+            .where(eq(users.id, userId));
+
+        // Password berubah -> putuskan semua sesi (refresh token) lama demi
+        // keamanan, termasuk sesi di perangkat lain kalau ada yang mencuri
+        // token sebelumnya. Perangkat yang sedang dipakai tetap jalan
+        // sampai access token-nya kedaluwarsa sendiri (pendek umurnya).
+        await db.delete(sessions).where(eq(sessions.userId, userId));
+    }
+
     private generateAccessToken(payload: JwtPayload): string {
         return jwt.sign(payload, env.JWT_SECRET, {
             expiresIn: this.parseExpiry(env.JWT_EXPIRES_IN),

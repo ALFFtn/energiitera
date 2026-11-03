@@ -7,6 +7,7 @@ import { BuildingDetail } from './pages/BuildingDetail';
 import { LoginPage } from './pages/LoginPage';
 import { GuestDemo } from './pages/GuestDemo';
 import { UserManagement } from './pages/UserManagement';
+import { ProfileSettings } from './pages/ProfileSettings';
 import { AuthGuard } from './components/common/AuthGuard';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
           {/* UserManagement itself redirects non-admin to /monitoring; nilai
               keamanan sesungguhnya tetap di backend (authorize('admin')). */}
           <Route path="/users" element={<AuthGuard><UserManagement /></AuthGuard>} />
+          <Route path="/profile" element={<AuthGuard><ProfileSettings /></AuthGuard>} />
         </Routes>
       </Router>
     </ThemeProvider>
