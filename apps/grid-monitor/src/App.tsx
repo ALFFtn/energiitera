@@ -6,6 +6,7 @@ import { Monitoring } from './pages/Monitoring';
 import { BuildingDetail } from './pages/BuildingDetail';
 import { LoginPage } from './pages/LoginPage';
 import { GuestDemo } from './pages/GuestDemo';
+import { UserManagement } from './pages/UserManagement';
 import { AuthGuard } from './components/common/AuthGuard';
 
 function App() {
@@ -25,6 +26,9 @@ function App() {
           <Route path="/analytics" element={<AuthGuard><AnalyticsDashboard /></AuthGuard>} />
           <Route path="/monitoring" element={<AuthGuard><Monitoring /></AuthGuard>} />
           <Route path="/building/:buildingId" element={<AuthGuard><BuildingDetail /></AuthGuard>} />
+          {/* UserManagement itself redirects non-admin to /monitoring; nilai
+              keamanan sesungguhnya tetap di backend (authorize('admin')). */}
+          <Route path="/users" element={<AuthGuard><UserManagement /></AuthGuard>} />
         </Routes>
       </Router>
     </ThemeProvider>

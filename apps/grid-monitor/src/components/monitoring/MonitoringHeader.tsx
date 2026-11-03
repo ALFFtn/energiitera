@@ -2,15 +2,20 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ProfileMenu } from '../common/ProfileMenu';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { useAuth } from '../common/AuthGuard';
 
 export function MonitoringHeader() {
+    const { isAdmin } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const location = useLocation();
 
     const isActive = (path: string) => location.pathname === path;
 
     const navLinks = [
-        { path: '/monitoring', label: 'Buildings' },
+        { path: '/monitoring', label: 'Buildings', icon: 'apartment' },
+        // Hanya admin yang lihat menu ini -- backend tetap jadi batas
+        // keamanan sesungguhnya (authorize('admin') di users.routes.ts).
+        ...(isAdmin ? [{ path: '/users', label: 'User Management', icon: 'group' }] : []),
     ];
 
     return (
@@ -107,7 +112,7 @@ export function MonitoringHeader() {
                                     }`}
                                 >
                                     <span className="material-symbols-outlined text-xl">
-                                        {link.path === '/monitoring' ? 'apartment' : 'analytics'}
+                                        {link.icon}
                                     </span>
                                     {link.label}
                                 </Link>

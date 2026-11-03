@@ -14,6 +14,7 @@ import alertsRoutes from './routes/alerts.routes';
 import readingsRoutes from './routes/readings.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import weatherRoutes from './routes/weather.routes';
+import usersRoutes from './routes/users.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -56,6 +57,7 @@ app.use('/api/alerts', alertsRoutes);
 app.use('/api', readingsRoutes);    // Includes /readings, /grid
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/weather', weatherRoutes);
+app.use('/api', usersRoutes);       // Includes /users (admin-only)
 
 // Error handling
 app.use(notFound);
