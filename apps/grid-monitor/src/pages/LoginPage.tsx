@@ -234,7 +234,7 @@ export function LoginPage() {
                                 <p className="text-xs text-slate-400 dark:text-[#586275] font-medium uppercase tracking-wider">
                                     Restricted Access • Authorized Personnel Only
                                 </p>
-                                <p className="text-xs text-slate-300 dark:text-[#3b4354]">v1.0.4 • Electrical Health Systems Inc.</p>
+                                <p className="text-xs text-slate-300 dark:text-[#3b4354]">v1.0.0 • Thinqly Labs Inc.</p>
                             </div>
                         </div>
                     </div>
