@@ -455,14 +455,6 @@ export function BuildingDetail() {
                         <span className="material-symbols-outlined text-[18px]">download</span>
                         Export CSV
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1e232e] border border-slate-200 dark:border-[#282e39] rounded-lg hover:border-primary dark:hover:border-primary transition-colors text-sm font-medium">
-                        <span className="material-symbols-outlined text-[18px]">history</span>
-                        View History
-                    </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1e232e] border border-slate-200 dark:border-[#282e39] rounded-lg hover:border-primary dark:hover:border-primary transition-colors text-sm font-medium">
-                        <span className="material-symbols-outlined text-[18px]">schedule</span>
-                        Schedule Maintenance
-                    </button>
                     <button
                         onClick={() => setIsConfigModalOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
