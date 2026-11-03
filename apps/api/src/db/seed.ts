@@ -30,9 +30,11 @@ async function seed() {
     }).$returningId();
     const [adminUser] = await db.select().from(users).where(eq(users.id, adminResult[0].id));
 
+    // Dua tier role saja: 'admin' (bisa tambah/edit/hapus gedung) dan
+    // 'viewer' (lihat-saja). Akun di bawah ini contoh viewer.
     await db.insert(users).values([
-        { email: 'engineer@gridmonitor.iot', passwordHash, name: 'John Engineer', role: 'engineer' },
-        { email: 'operator@gridmonitor.iot', passwordHash, name: 'Jane Operator', role: 'operator' },
+        { email: 'engineer@gridmonitor.iot', passwordHash, name: 'John Engineer', role: 'viewer' },
+        { email: 'operator@gridmonitor.iot', passwordHash, name: 'Jane Operator', role: 'viewer' },
     ]);
 
     // Create campus

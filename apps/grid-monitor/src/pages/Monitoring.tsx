@@ -5,8 +5,10 @@ import { MonitoringSidebar } from '../components/monitoring/MonitoringSidebar';
 import { BuildingGrid } from '../components/monitoring/BuildingGrid';
 import { MonitoringRightSidebar } from '../components/monitoring/MonitoringRightSidebar';
 import { AddBuildingModal } from '../components/monitoring/AddBuildingModal';
+import { useAuth } from '../components/common/AuthGuard';
 
 export function Monitoring() {
+    const { isAdmin } = useAuth();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [selectedZone, setSelectedZone] = useState<string | null>(null);
@@ -66,13 +68,15 @@ export function Monitoring() {
                                     <span className="material-symbols-outlined text-[18px] md:text-[20px]">download</span>
                                     <span className="hidden sm:inline ml-2">Export</span>
                                 </button>
-                                <button
-                                    onClick={() => setIsAddModalOpen(true)}
-                                    className="flex items-center justify-center h-9 md:h-10 px-3 md:px-4 rounded-lg bg-primary text-white hover:bg-blue-600 font-medium text-sm transition-colors shadow-lg shadow-primary/25"
-                                >
-                                    <span className="material-symbols-outlined text-[18px] md:text-[20px]">add</span>
-                                    <span className="hidden sm:inline ml-2">Add Building</span>
-                                </button>
+                                {isAdmin && (
+                                    <button
+                                        onClick={() => setIsAddModalOpen(true)}
+                                        className="flex items-center justify-center h-9 md:h-10 px-3 md:px-4 rounded-lg bg-primary text-white hover:bg-blue-600 font-medium text-sm transition-colors shadow-lg shadow-primary/25"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px] md:text-[20px]">add</span>
+                                        <span className="hidden sm:inline ml-2">Add Building</span>
+                                    </button>
+                                )}
                             </div>
                         </div>
 

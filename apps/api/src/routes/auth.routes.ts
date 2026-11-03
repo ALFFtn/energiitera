@@ -19,7 +19,10 @@ const registerSchema = z.object({
         email: z.string().email('Invalid email'),
         password: z.string().min(6, 'Password must be at least 6 characters'),
         name: z.string().min(2, 'Name must be at least 2 characters'),
-        role: z.enum(['admin', 'engineer', 'operator']).optional(),
+        // Sengaja tidak ada field `role` di sini: endpoint ini publik (tanpa
+        // `authenticate`), jadi kalau klien boleh kirim role sendiri, siapa
+        // pun bisa daftar sebagai 'admin' langsung lewat request mentah.
+        // Semua akun baru selalu dibuat sebagai 'viewer' -- lihat authService.register().
     }),
 });
 
@@ -32,7 +35,13 @@ const refreshSchema = z.object({
 // Routes
 router.post('/register', validate(registerSchema), async (req, res, next) => {
     try {
-        const user = await authService.register(req.body);
+        // Pakai field satu-satu, BUKAN `req.body` mentah: `validate()` cuma
+        // memvalidasi, tidak mengganti req.body dengan hasil parse Zod yang
+        // sudah di-strip (lihat middleware/validate.ts) -- jadi kalau di sini
+        // diteruskan req.body apa adanya, klien tetap bisa menyelipkan field
+        // `role: "admin"` sendiri walau sudah dihapus dari registerSchema.
+        const { email, password, name } = req.body;
+        const user = await authService.register({ email, password, name });
         res.status(201).json({ success: true, data: user });
     } catch (error) {
         next(error);

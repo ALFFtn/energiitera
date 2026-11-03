@@ -28,7 +28,11 @@ export class AuthService {
                 email: data.email,
                 passwordHash,
                 name: data.name,
-                role: data.role || 'operator',
+                // 'viewer' kalau tidak dikirim -- endpoint publik /auth/register
+                // tidak pernah mengirim role (lihat auth.routes.ts), jadi semua
+                // pendaftaran mandiri otomatis jadi viewer (least privilege).
+                // Param `role` di sini tetap ada utk pemakaian internal/seed.
+                role: data.role || 'viewer',
             })
             .$returningId();
 

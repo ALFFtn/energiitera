@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAllBuildingsSensor } from '../../hooks/useSocket';
 import { API_URL } from '../../config/api';
+import { useAuth } from '../common/AuthGuard';
 
 interface BuildingProps {
     id: string;
@@ -18,8 +19,13 @@ interface BuildingProps {
 }
 
 function BuildingCardMenu({ buildingId, buildingName, onDelete }: { buildingId: string; buildingName: string; onDelete: () => void }) {
+    const { isAdmin } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Viewer tidak boleh hapus gedung -- backend juga menolak lewat
+    // authorize('admin'), ini cuma supaya tombolnya tidak muncul sama sekali.
+    if (!isAdmin) return null;
 
     const handleDelete = async () => {
         if (window.confirm(`Are you sure you want to delete "${buildingName}"? This action cannot be undone.`)) {

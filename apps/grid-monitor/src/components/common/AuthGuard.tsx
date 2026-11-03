@@ -81,6 +81,10 @@ export function useAuth() {
 
     const user = userStr ? JSON.parse(userStr) : null;
     const isAuthenticated = !!token;
+    // Hanya dua tier: 'admin' (bisa tambah/edit/hapus gedung) dan 'viewer'
+    // (lihat-saja). Ini cuma untuk UX (sembunyikan tombol) -- batas keamanan
+    // sesungguhnya ada di backend lewat middleware authorize('admin').
+    const isAdmin = user?.role === 'admin';
 
     const logout = () => {
         localStorage.removeItem('accessToken');
@@ -89,5 +93,5 @@ export function useAuth() {
         window.location.href = '/login';
     };
 
-    return { isAuthenticated, user, token, logout };
+    return { isAuthenticated, user, isAdmin, token, logout };
 }

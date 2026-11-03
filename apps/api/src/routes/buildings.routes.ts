@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { buildingService } from '../services/buildingService.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -81,7 +81,7 @@ router.get('/buildings/:id', authenticate, async (req, res, next) => {
     }
 });
 
-router.put('/buildings/:id', authenticate, async (req, res, next) => {
+router.put('/buildings/:id', authenticate, authorize('admin'), async (req, res, next) => {
     try {
         const building = await buildingService.updateBuilding(req.params.id, req.body);
         res.json({ success: true, data: building });
@@ -90,7 +90,7 @@ router.put('/buildings/:id', authenticate, async (req, res, next) => {
     }
 });
 
-router.post('/buildings', authenticate, async (req, res, next) => {
+router.post('/buildings', authenticate, authorize('admin'), async (req, res, next) => {
     try {
         const { zoneId, name, code, description, gridConnection, mapCoordinates } = req.body;
 
@@ -111,7 +111,7 @@ router.post('/buildings', authenticate, async (req, res, next) => {
     }
 });
 
-router.delete('/buildings/:id', authenticate, async (req, res, next) => {
+router.delete('/buildings/:id', authenticate, authorize('admin'), async (req, res, next) => {
     try {
         const building = await buildingService.deleteBuilding(req.params.id);
         res.json({ success: true, data: building, message: 'Building deleted successfully' });
