@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { API_URL } from '../config/api';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 
@@ -217,6 +217,20 @@ export function LoginPage() {
                                 )}
                             </button>
                         </form>
+
+                        {/* Demo / Guest access */}
+                        <div className="flex items-center gap-3">
+                            <div className="h-px flex-1 bg-slate-200 dark:bg-[#3b4354]/50" />
+                            <span className="text-xs text-slate-400 dark:text-[#586275] font-medium uppercase tracking-wider">atau</span>
+                            <div className="h-px flex-1 bg-slate-200 dark:bg-[#3b4354]/50" />
+                        </div>
+                        <Link
+                            to="/demo"
+                            className="flex w-full items-center justify-center rounded-lg border border-slate-200 dark:border-[#3b4354] bg-white dark:bg-[#1b1f27] py-3.5 px-4 text-sm font-bold text-slate-700 dark:text-white hover:border-primary hover:text-primary dark:hover:text-primary transition-all active:scale-[0.99] gap-2"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">visibility</span>
+                            <span>Masuk sebagai Tamu (Demo)</span>
+                        </Link>
 
                         {/* Footer */}
                         <div className="mt-auto pt-6 border-t border-slate-200 dark:border-[#3b4354]/30">
