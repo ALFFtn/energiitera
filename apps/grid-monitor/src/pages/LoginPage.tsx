@@ -88,20 +88,16 @@ export function LoginPage() {
                             <span className="material-symbols-outlined text-primary text-3xl">monitoring</span>
                         </div>
                         <h2 className="text-4xl font-bold tracking-tight text-white mb-4 leading-tight">
-                            Real-time Grid<br />Intelligence
+                            Real-time Monitoring<br />System
                         </h2>
                         <p className="text-slate-400 text-base leading-relaxed max-w-sm">
-                            Secure access to the campus electrical health monitoring system.
-                            Visualize loads, detect anomalies, and manage power distribution in real-time.
+                            Secure access to the electrical Building monitoring system.
+                            Visualize loads, logging data, and know power distribution in real-time.
                         </p>
                         <div className="mt-8 flex gap-3">
                             <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-lg border border-white/10">
                                 <span className="material-symbols-outlined text-primary text-[16px]">bolt</span>
                                 <span className="text-sm font-medium text-slate-200">Live Load: 84%</span>
-                            </div>
-                            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-lg border border-white/10">
-                                <span className="material-symbols-outlined text-green-400 text-[16px]">check_circle</span>
-                                <span className="text-sm font-medium text-slate-200">Grid Stable</span>
                             </div>
                         </div>
                     </div>
@@ -139,7 +135,7 @@ export function LoginPage() {
                         {/* Header */}
                         <div>
                             <h1 className="text-slate-900 dark:text-white tracking-tight text-[32px] font-bold leading-tight mb-2">
-                                Electrical Health Monitor
+                                Electrical Building Monitoring System
                             </h1>
                             <p className="text-slate-500 dark:text-[#9ca6ba] text-base font-normal leading-normal">
                                 Please sign in to access the control panel.
