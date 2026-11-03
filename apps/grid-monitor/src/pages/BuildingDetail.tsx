@@ -57,6 +57,8 @@ export function BuildingDetail() {
         powerFactor,
         frequency,
         temperature,
+        energyImport,
+        energyExport,
         thdVoltage,
         thdCurrent,
         lastUpdate,
@@ -181,6 +183,8 @@ export function BuildingDetail() {
             ['Power Factor', powerFactor.toFixed(3), ''],
             ['Frequency', frequency.toFixed(2), 'Hz'],
             ['Temperature', temperature.toFixed(1), '°C'],
+            ['Energy Import', energyImport.toFixed(2), 'kWh'],
+            ['Energy Export', energyExport.toFixed(2), 'kWh'],
             ['THD Voltage', thdVoltage.toFixed(2), '%'],
             ['THD Current', thdCurrent.toFixed(2), '%'],
             [''],
@@ -336,7 +340,7 @@ export function BuildingDetail() {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                     <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
                         <div className="flex items-center gap-2 mb-2">
                             <span className="material-symbols-outlined text-yellow-500 text-[20px]">electric_bolt</span>
@@ -355,13 +359,19 @@ export function BuildingDetail() {
                     </div>
                     <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="material-symbols-outlined text-orange-500 text-[20px]">thermostat</span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Temperature</span>
+                            <span className="material-symbols-outlined text-teal-500 text-[20px]">input</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Energy Import</span>
                         </div>
-                        <p className={`text-3xl font-bold tabular-nums ${temperature > 50 ? 'text-red-500' : temperature > 40 ? 'text-orange-500' : ''}`}>
-                            {temperature.toFixed(1)}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-1">°C</p>
+                        <p className="text-3xl font-bold tabular-nums">{energyImport.toFixed(1)}</p>
+                        <p className="text-xs text-slate-400 mt-1">kWh</p>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="material-symbols-outlined text-violet-500 text-[20px]">output</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Energy Export</span>
+                        </div>
+                        <p className="text-3xl font-bold tabular-nums">{energyExport.toFixed(1)}</p>
+                        <p className="text-xs text-slate-400 mt-1">kWh</p>
                     </div>
                     <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
                         <div className="flex items-center gap-2 mb-2">
@@ -431,6 +441,8 @@ export function BuildingDetail() {
                         power_factor={powerFactor}
                         frequency={frequency}
                         temperature={temperature}
+                        energy_import={energyImport}
+                        energy_export={energyExport}
                         buildingId={buildingId}
                     />
                     <EventLog />

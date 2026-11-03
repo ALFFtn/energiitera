@@ -23,12 +23,15 @@ interface DemoState {
     voltageR: number; voltageS: number; voltageT: number;
     currentR: number; currentS: number; currentT: number;
     power: number; powerFactor: number; frequency: number; temperature: number;
+    energyImport: number; energyExport: number;
 }
 
 const BASE: DemoState = {
     voltageR: 236.2, voltageS: 238.4, voltageT: 237.1,
     currentR: 34.5, currentS: 29.8, currentT: 38.2,
     power: 24.6, powerFactor: 0.98, frequency: 50.02, temperature: 29.4,
+    // Nilai awal masuk akal, seolah meter sudah berjalan lama (bukan mulai dari 0).
+    energyImport: 1245.8, energyExport: 32.4,
 };
 
 // Random-walk ringan: bergerak sedikit tiap tick, ditarik pelan kembali ke
@@ -68,12 +71,17 @@ export function GuestDemo() {
                 powerFactor: jitter(prev.powerFactor, BASE.powerFactor, 0.015, 0.92, 1),
                 frequency: jitter(prev.frequency, BASE.frequency, 0.06, 49.7, 50.3),
                 temperature: jitter(prev.temperature, BASE.temperature, 0.4, 24, 36),
+                // Counter kumulatif: selalu naik mengikuti daya saat ini,
+                // bukan random-walk (konsumsi energi tidak pernah turun).
+                // Interval tick = 3 detik = 3/3600 jam.
+                energyImport: prev.energyImport + prev.power * (3 / 3600),
+                energyExport: prev.energyExport + prev.power * 0.015 * (3 / 3600),
             }));
         }, 3000);
         return () => clearInterval(interval);
     }, []);
 
-    const { voltageR, voltageS, voltageT, currentR, currentS, currentT, power, powerFactor, frequency, temperature } = data;
+    const { voltageR, voltageS, voltageT, currentR, currentS, currentT, power, powerFactor, frequency, temperature, energyImport, energyExport } = data;
     const thdVoltage = estimateThdVoltage(voltageR, voltageS, voltageT);
     const thdCurrent = estimateThdCurrent(powerFactor);
     const reactivePower = power * Math.tan(Math.acos(powerFactor || 0.95));
@@ -139,7 +147,7 @@ export function GuestDemo() {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                     <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
                         <div className="flex items-center gap-2 mb-2">
                             <span className="material-symbols-outlined text-yellow-500 text-[20px]">electric_bolt</span>
@@ -158,11 +166,19 @@ export function GuestDemo() {
                     </div>
                     <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="material-symbols-outlined text-orange-500 text-[20px]">thermostat</span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Temperature</span>
+                            <span className="material-symbols-outlined text-teal-500 text-[20px]">input</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Energy Import</span>
                         </div>
-                        <p className="text-3xl font-bold tabular-nums">{temperature.toFixed(1)}</p>
-                        <p className="text-xs text-slate-400 mt-1">°C</p>
+                        <p className="text-3xl font-bold tabular-nums">{energyImport.toFixed(1)}</p>
+                        <p className="text-xs text-slate-400 mt-1">kWh</p>
+                    </div>
+                    <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="material-symbols-outlined text-violet-500 text-[20px]">output</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Energy Export</span>
+                        </div>
+                        <p className="text-3xl font-bold tabular-nums">{energyExport.toFixed(1)}</p>
+                        <p className="text-xs text-slate-400 mt-1">kWh</p>
                     </div>
                     <div className="bg-white dark:bg-[#1e232e] rounded-xl p-4 border border-slate-200 dark:border-[#282e39]">
                         <div className="flex items-center gap-2 mb-2">
@@ -196,6 +212,8 @@ export function GuestDemo() {
                         power_factor={powerFactor}
                         frequency={frequency}
                         temperature={temperature}
+                        energy_import={energyImport}
+                        energy_export={energyExport}
                         // Sengaja tanpa buildingId -- lihat catatan di atas file.
                     />
                     <EventLog />

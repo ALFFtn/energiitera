@@ -15,6 +15,8 @@ interface SensorData {
     frequency?: number;
     temperature?: number;
     energy?: number;
+    energy_import?: number;
+    energy_export?: number;
     thd_v?: number;
     thd_i?: number;
 }
@@ -81,6 +83,8 @@ export async function flushSensorReadings(): Promise<number> {
             frequency: r.data.frequency != null ? String(r.data.frequency) : undefined,
             temperature: r.data.temperature != null ? String(r.data.temperature) : undefined,
             energy: r.data.energy != null ? String(r.data.energy) : undefined,
+            energyImport: r.data.energy_import != null ? String(r.data.energy_import) : undefined,
+            energyExport: r.data.energy_export != null ? String(r.data.energy_export) : undefined,
             thdVoltage: r.data.thd_v != null ? String(r.data.thd_v) : undefined,
             thdCurrent: r.data.thd_i != null ? String(r.data.thd_i) : undefined,
         }));
@@ -165,6 +169,8 @@ export async function getSensorReadingsBucketed(
     thdVoltage: string | null;
     thdCurrent: string | null;
     energy: string | null;
+    energyImport: string | null;
+    energyExport: string | null;
 }>> {
     const bs = bucketSeconds;
     return await db.select({
@@ -184,6 +190,8 @@ export async function getSensorReadingsBucketed(
         // Energy is a cumulative counter, not an instantaneous reading — take
         // the last (max) value in the bucket rather than averaging it.
         energy:      sql<string>`CAST(MAX(CAST(${buildingSensorReadings.energy}      AS DECIMAL(10,4))) AS CHAR)`,
+        energyImport: sql<string>`CAST(MAX(CAST(${buildingSensorReadings.energyImport} AS DECIMAL(10,4))) AS CHAR)`,
+        energyExport: sql<string>`CAST(MAX(CAST(${buildingSensorReadings.energyExport} AS DECIMAL(10,4))) AS CHAR)`,
     })
     .from(buildingSensorReadings)
     .where(and(
@@ -283,6 +291,7 @@ export async function exportReadingsAsCSV(
         'Current R (A)', 'Current S (A)', 'Current T (A)',
         'Power (kW)', 'Power Factor',
         'Frequency (Hz)', 'Temperature (C)', 'Energy (kWh)',
+        'Energy Import (kWh)', 'Energy Export (kWh)',
         'THD Voltage (%)', 'THD Current (%)'
     ];
 
@@ -302,6 +311,8 @@ export async function exportReadingsAsCSV(
         r.frequency || '',
         r.temperature || '',
         r.energy || '',
+        r.energyImport || '',
+        r.energyExport || '',
         r.thdVoltage || '',
         r.thdCurrent || '',
     ]);

@@ -8,6 +8,13 @@
       "when": 1775462608771,
       "tag": "0000_serious_stryfe",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1793719169419,
+      "tag": "0001_special_strong_guy",
+      "breakpoints": true
     }
   ]
 }

@@ -14,6 +14,8 @@ interface SensorData {
     frequency?: number;
     temperature?: number;
     energy?: number;
+    energy_import?: number;
+    energy_export?: number;
     thd_v?: number;
     thd_i?: number;
 }
@@ -86,6 +88,8 @@ function normalizeSensorReadings(readings: Record<string, unknown>): Partial<Sen
         frequency: parseMaybeNumber(readings.frequency),
         temperature: parseMaybeNumber(readings.temperature),
         energy: parseMaybeNumber(readings.energy),
+        energy_import: parseMaybeNumber(readings.energy_import ?? readings.energyImport),
+        energy_export: parseMaybeNumber(readings.energy_export ?? readings.energyExport),
         thd_v: parseMaybeNumber(readings.thd_v ?? readings.thdVoltage),
         thd_i: parseMaybeNumber(readings.thd_i ?? readings.thdCurrent),
     };
@@ -156,6 +160,8 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
         frequency: 50,
         temperature: 0,
         energy: 0,
+        energy_import: 0,
+        energy_export: 0,
         thd_v: 0,
         thd_i: 0,
     });
@@ -229,6 +235,8 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
                         frequency: nonZero(normalized.frequency, prev.frequency ?? 50),
                         temperature: nonZero(normalized.temperature, prev.temperature ?? 0),
                         energy: nonZero(normalized.energy, prev.energy ?? 0),
+                        energy_import: nonZero(normalized.energy_import, prev.energy_import ?? 0),
+                        energy_export: nonZero(normalized.energy_export, prev.energy_export ?? 0),
                         thd_v: nonZero(normalized.thd_v, prev.thd_v ?? 0),
                         thd_i: nonZero(normalized.thd_i, prev.thd_i ?? 0),
                     }));
@@ -326,6 +334,8 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
                     frequency: nonZero(normalized.frequency, prev.frequency ?? 50),
                     temperature: nonZero(normalized.temperature, prev.temperature ?? 0),
                     energy: nonZero(normalized.energy, prev.energy ?? 0),
+                    energy_import: nonZero(normalized.energy_import, prev.energy_import ?? 0),
+                    energy_export: nonZero(normalized.energy_export, prev.energy_export ?? 0),
                     thd_v: nonZero(normalized.thd_v, prev.thd_v ?? 0),
                     thd_i: nonZero(normalized.thd_i, prev.thd_i ?? 0),
                 }));
@@ -361,6 +371,8 @@ export function useBuildingSensor({ buildingCode, zoneCode, sensorId = 'lvmdp-01
         powerFactor: sensorData.power_factor || 0,
         frequency: sensorData.frequency || 50,
         temperature: sensorData.temperature || 0,
+        energyImport: sensorData.energy_import || 0,
+        energyExport: sensorData.energy_export || 0,
         // Prefer a real sensor-reported value if one ever shows up; otherwise
         // estimate from available electrical parameters (see functions above).
         thdVoltage: sensorData.thd_v || estimateThdVoltage(

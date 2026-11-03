@@ -29,6 +29,10 @@ export const buildingSensorReadings = mysqlTable('building_sensor_readings', {
     temperature: decimal('temperature', { precision: 5, scale: 2 }),
     energy: decimal('energy', { precision: 12, scale: 2 }),
 
+    // Energy counters (kumulatif, dari topic MQTT energy_import/energy_export)
+    energyImport: decimal('energy_import', { precision: 12, scale: 2 }),
+    energyExport: decimal('energy_export', { precision: 12, scale: 2 }),
+
     // THD
     thdVoltage: decimal('thd_voltage', { precision: 5, scale: 2 }),
     thdCurrent: decimal('thd_current', { precision: 5, scale: 2 }),

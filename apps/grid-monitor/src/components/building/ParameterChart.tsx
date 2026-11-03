@@ -18,6 +18,8 @@ interface ParameterChartProps {
     power_factor?: number;
     frequency?: number;
     temperature?: number;
+    energy_import?: number;
+    energy_export?: number;
     buildingId?: string;
 }
 
@@ -46,6 +48,8 @@ const PARAMETER_CONFIG: Record<string, { label: string; unit: string; color: str
     power_factor: { label: 'Power Factor',    unit: '',   color: '#a855f7' },
     frequency:    { label: 'Frequency',       unit: 'Hz', color: '#10b981' },
     temperature:  { label: 'Temperature',     unit: '°C', color: '#ef4444' },
+    energy_import: { label: 'Energy Import',  unit: 'kWh', color: '#14b8a6' },
+    energy_export: { label: 'Energy Export',  unit: 'kWh', color: '#8b5cf6' },
 };
 
 const MAX_LIVE_POINTS = 60;
@@ -70,6 +74,8 @@ const PARAM_TO_DB_COLUMN: Record<string, string> = {
     power_factor: 'powerFactor',
     frequency:    'frequency',
     temperature:  'temperature',
+    energy_import: 'energyImport',
+    energy_export: 'energyExport',
 };
 
 // "Nice numbers" axis algorithm (Paul Heckbert) — picks round tick values
@@ -394,6 +400,8 @@ export function ParameterChart(props: ParameterChartProps) {
                         <optgroup label="Power">
                             <option value="power">Active Power</option>
                             <option value="power_factor">Power Factor</option>
+                            <option value="energy_import">Energy Import</option>
+                            <option value="energy_export">Energy Export</option>
                         </optgroup>
                         <optgroup label="Other">
                             <option value="frequency">Frequency</option>
